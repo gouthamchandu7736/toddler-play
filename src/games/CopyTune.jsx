@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import Sparkles from "../components/Sparkles.jsx";
-import HomeButton from "../components/HomeButton.jsx";
-import Brand from "../components/Brand.jsx";
+import GameShell from "../ui/GameShell.jsx";
 import {
   NOTES,
   playNote,
@@ -140,9 +139,7 @@ export default function CopyTune({ onHome }) {
   };
 
   return (
-    <div className="screen game copy-tune">
-      <Brand />
-
+    <GameShell title="Copy me" tone="think" onHome={onHome}>
       <div className="ct-status" aria-live="polite">
         <motion.span
           key={phase}
@@ -192,7 +189,6 @@ export default function CopyTune({ onHome }) {
         🔊
       </button>
 
-      <HomeButton onClick={onHome} />
-    </div>
+    </GameShell>
   );
 }

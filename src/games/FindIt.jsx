@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import Sparkles from "../components/Sparkles.jsx";
-import HomeButton from "../components/HomeButton.jsx";
-import Brand from "../components/Brand.jsx";
+import GameShell from "../ui/GameShell.jsx";
 import { ANIMALS, BIRDS, FARM, VEHICLES } from "../data/scenes.js";
 import { playSfx, speak, stopSpeech, vibrate } from "../audio/audioManager.js";
 
@@ -94,9 +93,7 @@ export default function FindIt({ onHome }) {
   };
 
   return (
-    <div className="screen game find-it">
-      <Brand />
-
+    <GameShell title="Find it" tone="think" onHome={onHome}>
       {/* The prompt IS the replay button — the question is the whole task, so
           hearing it again must be the most obvious thing on screen. */}
       <button
@@ -143,7 +140,6 @@ export default function FindIt({ onHome }) {
         })}
       </div>
 
-      <HomeButton onClick={onHome} />
-    </div>
+    </GameShell>
   );
 }

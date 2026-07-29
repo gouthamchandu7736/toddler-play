@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, useAnimationControls } from "framer-motion";
 import Sparkles from "../components/Sparkles.jsx";
-import HomeButton from "../components/HomeButton.jsx";
-import Brand from "../components/Brand.jsx";
+import GameShell from "../ui/GameShell.jsx";
 import { playSfx, speak, stopSpeech, vibrate } from "../audio/audioManager.js";
 
 /**
@@ -191,15 +190,10 @@ export default function ShapePop({ onHome }) {
   );
 
   return (
-    <div className="screen game shape-pop">
+    <GameShell title="Pop" tone="play" onHome={onHome} className="shape-pop">
       {bubbles.map((b) => (
         <Bubble key={b.key} bubble={b} onPop={handlePop} onExpire={replace} />
       ))}
-      {/* Shapes float freely here, so they pass behind the badge. That is
-          fine: the badge is pointer-events: none, so a shape underneath it is
-          still poppable. */}
-      <Brand />
-      <HomeButton onClick={onHome} />
-    </div>
+    </GameShell>
   );
 }

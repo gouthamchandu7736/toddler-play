@@ -1,28 +1,22 @@
 import Character from "./Character.jsx";
-import HomeButton from "./HomeButton.jsx";
-import Brand from "./Brand.jsx";
+import GameShell from "../ui/GameShell.jsx";
 
 /**
  * Lays out a theme's characters.
  *
- * The grid is fixed at 2x3 (portrait) / 3x2 (landscape) rather than
- * auto-flowing: with `auto-fit` the tile count changes with the viewport and
- * the layout can overflow, and this app must never scroll. Six characters
- * always fit, at any phone size, in either orientation.
+ * Columns are fixed with `grid-auto-rows: 1fr`, not `auto-fit`: rows are added
+ * as a scene needs them and share the height equally, so a 6- or 8-character
+ * scene always fits without scrolling. `auto-fit` would change the tile count
+ * with the viewport and can overflow, and this app never scrolls.
  */
-export default function Scene({ characters, onHome, background }) {
+export default function Scene({ title, characters, onHome, onSettings }) {
   return (
-    <div
-      className="screen scene"
-      style={background ? { background } : undefined}
-    >
-      <Brand />
+    <GameShell title={title} tone="discover" onHome={onHome} onSettings={onSettings}>
       <div className="scene-grid">
         {characters.map((c) => (
           <Character key={c.id} character={c} />
         ))}
       </div>
-      <HomeButton onClick={onHome} />
-    </div>
+    </GameShell>
   );
 }

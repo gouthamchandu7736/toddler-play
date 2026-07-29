@@ -1,5 +1,4 @@
-import HomeButton from "./HomeButton.jsx";
-import Brand from "./Brand.jsx";
+import GameShell from "../ui/GameShell.jsx";
 import { playSfx, vibrate } from "../audio/audioManager.js";
 
 /**
@@ -14,6 +13,8 @@ import { playSfx, vibrate } from "../audio/audioManager.js";
  * to get stuck on, and no disabled button — a disabled control is a dead tap.
  */
 export default function Deck({
+  title,
+  tone = "learn",
   onPrev,
   onNext,
   onReplay,
@@ -28,9 +29,7 @@ export default function Deck({
   };
 
   return (
-    <div className={`screen game deck ${className}`}>
-      <Brand />
-
+    <GameShell title={title} tone={tone} onHome={onHome} className={`deck ${className}`}>
       <button
         type="button"
         className="deck-arrow deck-prev tappable"
@@ -63,7 +62,6 @@ export default function Deck({
         🔊
       </button>
 
-      <HomeButton onClick={onHome} />
-    </div>
+    </GameShell>
   );
 }

@@ -101,6 +101,8 @@ export default function LearnNumbers({ onHome }) {
 
   return (
     <Deck
+      title="Numbers"
+      tone="learn"
       className="learn-numbers"
       onPrev={() => go(-1)}
       onNext={() => go(1)}

@@ -85,6 +85,17 @@ export const FRUITS = [
   { id: "pineapple", label: "Pineapple", emoji: "🍍", soundText: "Spiky on top", color: "#fff0bf" },
 ];
 
+export const VEGETABLES = [
+  { id: "carrot", label: "Carrot", emoji: "🥕", soundText: "Crunchy and orange", color: "#ffd9b3" },
+  { id: "corn", label: "Corn", emoji: "🌽", soundText: "Yellow and sweet", color: "#fff0bf" },
+  { id: "tomato", label: "Tomato", emoji: "🍅", soundText: "Round and red", color: "#ffd0cc" },
+  { id: "aubergine", label: "Aubergine", emoji: "🍆", soundText: "Big and purple", color: "#e0d4f5" },
+  { id: "broccoli", label: "Broccoli", emoji: "🥦", soundText: "Like a little tree", color: "#d3f0d0" },
+  { id: "potato", label: "Potato", emoji: "🥔", soundText: "Grows underground", color: "#ecdcc4" },
+  { id: "pepper", label: "Pepper", emoji: "🌶️", soundText: "Spicy", color: "#ffcfcf" },
+  { id: "mushroom", label: "Mushroom", emoji: "🍄", soundText: "Has a little hat", color: "#f5dede" },
+];
+
 /** Backdrops, keyed to match the scene ids used by Home and App. */
 export const SCENE_BACKGROUNDS = {
   farm: "linear-gradient(#bde3ff 0%, #bde3ff 45%, #a7d489 45%, #7cc576 100%)",
@@ -93,6 +104,7 @@ export const SCENE_BACKGROUNDS = {
   vehicles: "linear-gradient(#dbe7f3 0%, #c9d6e3 55%, #9aa7b4 55%, #7d8a97 100%)",
   shapes: "linear-gradient(160deg, #fdf6e3 0%, #ffe8f0 60%, #e8e0ff 100%)",
   fruits: "linear-gradient(160deg, #fff4e0 0%, #ffe6cc 55%, #ffd9d9 100%)",
+  vegetables: "linear-gradient(160deg, #eefbe6 0%, #dff3d0 55%, #cbe8c0 100%)",
 };
 
 export const SCENES = {
@@ -102,6 +114,7 @@ export const SCENES = {
   vehicles: { characters: VEHICLES, background: SCENE_BACKGROUNDS.vehicles },
   shapes: { characters: SHAPES, background: SCENE_BACKGROUNDS.shapes },
   fruits: { characters: FRUITS, background: SCENE_BACKGROUNDS.fruits },
+  vegetables: { characters: VEGETABLES, background: SCENE_BACKGROUNDS.vegetables },
 };
 
 export default SCENES;

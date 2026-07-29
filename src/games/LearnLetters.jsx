@@ -71,6 +71,8 @@ export default function LearnLetters({ onHome }) {
 
   return (
     <Deck
+      title="Letters"
+      tone="learn"
       className="learn-letters"
       onPrev={() => go(-1)}
       onNext={() => go(1)}

@@ -284,3 +284,119 @@ At 390x844, 844x390 **and** 320x568:
   progressively during the count.
 - Find it draws all four choices from a single category.
 - Ten counters fit inside the card with zero overflow at 320 px wide.
+
+---
+
+## Design-system rebuild + 8 more activities (2026-07-29)
+
+Full visual redesign against a brief asking for a "premium, modern, playful"
+kids' platform. **20 activities**, six categories, one design system.
+
+### Where the brief was adapted, and why
+
+The brief describes a *website*. Several items assume a reader with a mouse:
+
+- **"Hover effects"** — a tablet has no hover. Implemented as *pressed* states
+  instead (`whileTap` + a solid shadow the button sinks into). Hover exists
+  behind `@media (hover: hover)` for a grown-up on a desktop, but no state that
+  carries meaning depends on it.
+- **"Play button on each card"** — rendered, but `pointer-events: none`. The
+  *whole card* is the target (~170px). A small button inside a big card teaches
+  a child that only part of a thing is tappable, and every miss becomes a dead
+  tap.
+- **"Short description on each card"** — kept, written for the GROWN-UP. It
+  never carries anything she needs; the emoji identifies the game and the title
+  is spoken aloud when she touches the card.
+- **"Search"** — not built. It needs typing and reading, and a pre-reader
+  cannot use it. Categories + Favourites + Recently Played cover the same need
+  ("get me to a game fast") without either.
+- **"Hamburger menu / breadcrumbs"** — not built, same reason. Navigation is
+  positional: Back is the same shape in the same corner on every screen, which
+  becomes muscle memory rather than something to read.
+- **Favourites** — built, and it is the one place a second target was accepted
+  on a card. It earns it by being harmless: a mis-tap toggles a star, it does
+  not navigate or take anything away. Full 88px hit area, small visual.
+
+### Design system
+
+- `styles/tokens.css` — colour, type scale, spacing, radius, shadow, motion.
+  Nothing else hard-codes a hex, a radius or a duration.
+- Palette is deliberately **mid-saturation**. Neon on a bright screen is
+  fatiguing over a long session and leaves no headroom for reward moments to
+  feel brighter than the UI. Shadows are tinted toward the ink colour — neutral
+  black against pastel reads as dirt.
+- **Fredoka, self-hosted**, 29 KB. A webfont link would break both the
+  zero-network-calls rule and offline mode. It is the VARIABLE font: one file
+  covers every weight, and Google's per-weight static files turned out to be
+  byte-identical to it, so requesting five weights shipped the same 29 KB five
+  times (164 KB → 29 KB).
+- `ui/Icon.jsx` — hand-drawn inline SVG, one 24x24 box, one 2.4 stroke. Nothing
+  to download, no dependency, uniform weight. **UI chrome only**: game identity
+  stays emoji, because a 3-year-old recognises a full-colour 🐄 instantly and a
+  two-tone line drawing of a cow not at all.
+- `ui/Button.jsx` — every control in the app. One place defines size, radius,
+  press feel and sound.
+- `ui/PlayfulBackground.jsx` — gradient sky, drifting clouds, rising bubbles,
+  twinkling stars, rolling hills. All CSS, transform/opacity only, so it stays
+  on the compositor. Low-contrast and slow on purpose: a background that
+  catches the eye pulls a toddler off the task.
+- `ui/GameShell.jsx` — background + header + content area, declared once.
+  Previously each game positioned its own floating Home button, which is how it
+  twice ended up overlapping a play tile.
+
+### Navigation
+
+Home is six category doors, not a wall of 20 games: the app must never scroll,
+and 20 tiles on one non-scrolling screen would be 20 tiles too small to hit.
+Favourites and Recently Played rows keep her usual games one tap away, so the
+grouping costs her nothing. Back from a game returns to its category, not home.
+
+Favourites/recents live in `localStorage` via `hooks/useStoredList.js` — device
+only, nothing transmitted, every access wrapped (localStorage throws in private
+Safari and at quota).
+
+### New activities (8)
+
+Memory Match (3 pairs — a 4x4 board is not a harder version of this game for a
+3-year-old, it is an unplayable one), Shadow Match (silhouettes via
+`brightness(0)`, so the shadow matches the picture exactly), Peekaboo (2.5-4s
+windows, not a reaction test), Catch the Stars (notes rise with a streak),
+Colouring (tap-to-fill, NOT freehand — freehand needs `touchmove`, which is
+globally cancelled so she cannot swipe out of the play area), Piano (pentatonic,
+so no combination of keys can sound wrong), Nursery Rhymes (line-by-line, each
+line lit as it is read), and a Vegetables scene.
+
+### Bugs found and fixed in this pass
+
+- **Colouring palette swatches were 18px** at 320px — eight in a fixed row.
+  A fixed four still gave 43px. `auto-fit, minmax(56px, 1fr)` lets the column
+  COUNT vary so the SIZE cannot. Now 60px+.
+- **Piano keys were 28px wide** at 320px. Portrait now stacks them as
+  full-width bars (xylophone); side-by-side returns at >=620px or landscape.
+- **Rhyme cards were crushed to ~96px** by the side arrows on a 320px screen.
+  Portrait drops the arrows to a row beneath the card.
+- **Catch stars were 41px** at 320px; added a 62px floor.
+- **Memory cards stretched into tall slivers** — the board now carries a 3:2
+  aspect so the cards come out square.
+
+### Verified
+
+At **390x844, 844x390, 320x568 and 1280x800**:
+
+- All 20 activities open, render and return; all six categories navigate.
+- **Zero console errors. Zero external network requests.**
+- Nothing scrolls in either axis on any screen at any size.
+- Smallest control is 60px (colour swatch) / 64px (star) / 68px (chrome).
+  Documented exceptions to the 88px rule: top-bar chrome 68px, deck arrows
+  56px wide but several hundred tall, number counters 56px, colour swatches.
+- Favourite star toggles `aria-pressed`, and both lists survive a reload.
+- Fredoka reports `loaded` and is the computed body font.
+
+### Not done from the brief
+
+Alphabet tracing, sticker book, drum/xylophone as separate instruments, jigsaw,
+shape sort, pattern matching, whack-a-mole as a scoring game, fishing, picture
+match, card flip as a separate game, bedtime stories, interactive storybook.
+Freehand drawing is blocked by the gesture lockdown (see Colouring). The rest
+is scope, not difficulty — say which matter and they are straightforward
+additions on this engine.

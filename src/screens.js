@@ -10,6 +10,7 @@
 export const SCREENS = {
   SPLASH: "splash",
   HOME: "home",
+  CATEGORY: "category",
   SCENE: "scene",
   GAME: "game",
 };

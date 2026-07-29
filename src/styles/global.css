@@ -1,18 +1,22 @@
-/* ---------------------------------------------------------------
-   Toddler Play — global styles
+@import "./tokens.css";
 
-   Rules this file enforces (PLAN.md Section 2):
+/* ===============================================================
+   Aditi's Playhouse — application styles
+
+   Built on tokens.css. Nothing here hard-codes a hex, a radius or a
+   duration; if you need a new one, add it as a token.
+
+   Non-negotiables enforced here (PLAN.md Section 2):
    - no text selection, no long-press callout, no tap highlight
    - no overscroll bounce / pull-to-refresh
    - no double-tap zoom (touch-action)
    - full-viewport, non-scrolling root
-   - every interactive element at least --tap-min on both axes
+   - every primary control at least --tap-min on both axes
+   =============================================================== */
 
-   Sizing is in vmin throughout, so a layout that fits one phone fits them
-   all, in either orientation, without media queries or JS measurement.
+/* ---------------------------------------------------------------
+   Reset & shell
    --------------------------------------------------------------- */
-
-/* --- reset --- */
 *,
 *::before,
 *::after {
@@ -27,7 +31,7 @@ body,
   width: 100%;
   height: 100%;
   overflow: hidden;
-  overscroll-behavior: none; /* no pull-to-refresh, no rubber-band */
+  overscroll-behavior: none;
 }
 
 html {
@@ -38,53 +42,26 @@ html {
 
 body {
   height: 100dvh;
-  position: fixed; /* belt-and-braces against iOS scroll chaining */
+  position: fixed;
   inset: 0;
-  font-family: "Baloo 2", "Comic Sans MS", "Trebuchet MS", system-ui,
-    -apple-system, "Segoe UI", sans-serif;
-  font-size: clamp(20px, 4vw, 32px);
-  line-height: 1.25;
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  font-weight: 500;
+  line-height: 1.3;
   color: var(--ink);
-  background: var(--bg);
+  background: var(--sky-soft);
   -webkit-font-smoothing: antialiased;
 }
 
-/* --- kill every gesture a toddler can trigger by accident --- */
+/* Kill every gesture a toddler can trigger by accident. */
 * {
-  -webkit-touch-callout: none; /* no long-press "save image" menu */
+  -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation; /* no double-tap-to-zoom */
+  touch-action: manipulation;
 }
 
-/* --- palette --- */
-:root {
-  --bg: #fdf6e3;
-  --ink: #3a2e2a;
-  --sky: #bde3ff;
-  --grass: #7cc576;
-  --sun: #ffd166;
-  --barn: #e76f51;
-
-  --tap-min: 88px; /* PLAN.md Section 2 rule 1: minimum touch target */
-
-  /* Space a play grid must leave clear so the floating corner buttons never
-     sit on top of something tappable. A tile hidden under the Home button is
-     a dead tap, and a tile that triggers Home instead of playing is worse. */
-  --corner-gutter: calc(var(--tap-min) + 26px);
-
-  /* Strip reserved along the top of a play screen for the app badge. The badge
-     itself is pointer-events: none, so this is purely so it doesn't sit on top
-     of an animal — not a tap-safety measure.
-     Must cover the badge's top offset (8px) AND its height, or it clips the
-     first row by a few pixels. */
-  --brand-gutter: clamp(54px, 11vmin, 80px);
-
-  color-scheme: light;
-}
-
-/* --- full-screen app shell --- */
 .app-root {
   position: relative;
   width: 100%;
@@ -97,21 +74,17 @@ body {
   inset: 0;
 }
 
-/* Every screen fills the shell. Safe-area padding lives here rather than on
-   the root so full-bleed backgrounds still reach the edges. */
 .screen {
   position: absolute;
   inset: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2vh;
-  text-align: center;
   overflow: hidden;
 }
 
-/* --- base tappable --- */
+/* ---------------------------------------------------------------
+   Base interactive
+   --------------------------------------------------------------- */
 .tappable {
   min-width: var(--tap-min);
   min-height: var(--tap-min);
@@ -128,103 +101,696 @@ body {
 .tappable:focus {
   outline: none;
 }
-.tappable:focus-visible {
-  outline: 4px solid var(--barn);
-  outline-offset: 4px;
+
+/* Keyboard focus stays visible and high-contrast for accessibility, without
+   showing a ring to every child who touches the screen. */
+.tappable:focus-visible,
+.btn:focus-visible {
+  outline: 4px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.icon {
+  display: block;
+  flex: none;
 }
 
 /* ---------------------------------------------------------------
-   Brand — app icon + name shown inside the app.
-
-   pointer-events: none is load-bearing. A toddler aims badly and taps the
-   corners constantly; if this badge could absorb a tap it would be a dead
-   spot, which PLAN.md Section 2 rule 2 forbids. Taps pass straight through to
-   whatever is underneath.
+   Buttons
    --------------------------------------------------------------- */
-.brand {
-  display: flex;
+.btn {
+  position: relative;
+  display: inline-flex;
   align-items: center;
-  gap: 0.6em;
-  pointer-events: none;
-  user-select: none;
+  justify-content: center;
+  gap: var(--s-2);
+  border: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--on-color);
+  cursor: pointer;
+  border-radius: var(--r-pill);
+  /* The chunky solid drop is what makes a button look pressable to a child —
+     it reads as a physical object with a side, not a coloured rectangle. */
+  box-shadow: var(--sh-solid) var(--btn-shade, rgba(0, 0, 0, 0.16)), var(--sh-2);
+  background: linear-gradient(180deg, var(--btn-lite) 0%, var(--btn-base) 100%);
+  transition: box-shadow var(--t-fast) var(--ease-out);
+  min-width: var(--tap-min);
+  min-height: var(--tap-min);
 }
 
-.brand-icon {
-  display: block;
-  border-radius: 24%;
-  object-fit: contain;
-  /* The artwork carries its own frame, so it needs a shadow rather than a
-     border to lift off a busy background. */
-  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.28));
+/* Hover is a desktop nicety only — every meaningful state is in :active,
+   because a finger cannot hover. */
+@media (hover: hover) {
+  .btn:hover {
+    box-shadow: var(--sh-solid) var(--btn-shade, rgba(0, 0, 0, 0.16)), var(--sh-3);
+  }
 }
 
-.brand-name {
-  font-weight: 800;
-  letter-spacing: 0.01em;
+.btn:active {
+  box-shadow: 0 2px 0 var(--btn-shade, rgba(0, 0, 0, 0.16)), var(--sh-1);
+}
+
+.btn-text {
+  padding-inline: var(--s-2);
+  font-size: var(--fs-md);
   white-space: nowrap;
 }
 
-/* --- mini: scenes and games. Sits in the reserved top strip. --- */
-.brand-mini {
+.btn-sm {
+  min-width: 56px;
+  min-height: 56px;
+  padding: var(--s-2) var(--s-4);
+}
+.btn-md {
+  padding: var(--s-3) var(--s-5);
+}
+.btn-lg {
+  min-width: 104px;
+  min-height: 104px;
+  padding: var(--s-4) var(--s-6);
+}
+
+.btn-round {
+  padding: 0;
+  aspect-ratio: 1;
+  border-radius: 50%;
+}
+
+.btn-sky {
+  --btn-base: var(--sky);
+  --btn-lite: #7ecffb;
+  --btn-shade: #2a9ad4;
+}
+.btn-sun {
+  --btn-base: var(--sun);
+  --btn-lite: #ffd970;
+  --btn-shade: #d9a316;
+  color: var(--ink);
+}
+.btn-coral {
+  --btn-base: var(--coral);
+  --btn-lite: #ffa588;
+  --btn-shade: #d96543;
+}
+.btn-grape {
+  --btn-base: var(--grape);
+  --btn-lite: #c0aaff;
+  --btn-shade: #7f5cd6;
+}
+.btn-mint {
+  --btn-base: var(--mint);
+  --btn-lite: #84e4c0;
+  --btn-shade: #35ab82;
+}
+.btn-bubblegum {
+  --btn-base: var(--bubblegum);
+  --btn-lite: #ffabc6;
+  --btn-shade: #dd6790;
+}
+
+/* Ghost: for chrome that must not compete with the play area. */
+.btn-ghost {
+  --btn-base: var(--surface-veil-strong);
+  --btn-lite: #ffffff;
+  --btn-shade: rgba(63, 51, 85, 0.16);
+  color: var(--ink);
+}
+
+/* ---------------------------------------------------------------
+   Playful background
+   --------------------------------------------------------------- */
+.bg {
   position: absolute;
-  top: max(8px, env(safe-area-inset-top));
-  left: max(10px, env(safe-area-inset-left));
-  z-index: 15;
-  padding: 5px 14px 5px 6px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.72);
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.16);
-}
-
-.brand-mini .brand-icon {
-  width: clamp(28px, 6vmin, 42px);
-  height: clamp(28px, 6vmin, 42px);
-}
-
-.brand-mini .brand-name {
-  font-size: clamp(14px, 3vmin, 22px);
-  color: #3a2e2a;
-}
-
-/* --- bar: Home screen header, in the strip the grid already reserves. --- */
-.brand-bar {
-  position: absolute;
-  top: max(10px, env(safe-area-inset-top));
-  left: max(14px, env(safe-area-inset-left));
-  z-index: 15;
-  /* Stop the name running under the settings gear in the opposite corner. */
-  right: calc(var(--corner-gutter) + env(safe-area-inset-right));
+  inset: 0;
   overflow: hidden;
+  pointer-events: none; /* decorative: must never absorb a tap */
+  z-index: 0;
 }
 
-.brand-bar .brand-icon {
-  width: clamp(38px, 9vmin, 60px);
-  height: clamp(38px, 9vmin, 60px);
+.bg-wash {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-mid) 55%, var(--bg-bot) 100%);
 }
 
-.brand-bar .brand-name {
-  font-size: clamp(17px, 4vmin, 30px);
-  color: #3a2e2a;
+.bg-sky,
+.bg-play {
+  --bg-top: #cfeeff;
+  --bg-mid: #e6f6ff;
+  --bg-bot: #fff6e2;
+  --bg-hill: #a8e0b4;
+  --bg-hill-2: #86d29b;
+}
+.bg-learn {
+  --bg-top: #fff0c9;
+  --bg-mid: #fff7e4;
+  --bg-bot: #ffeede;
+  --bg-hill: #ffd98a;
+  --bg-hill-2: #f7c86a;
+}
+.bg-discover {
+  --bg-top: #d6f7ea;
+  --bg-mid: #e9fbf3;
+  --bg-bot: #f6ffe8;
+  --bg-hill: #93dcb4;
+  --bg-hill-2: #6fcb9b;
+}
+.bg-think {
+  --bg-top: #e9e2ff;
+  --bg-mid: #f2eeff;
+  --bg-bot: #fdf1ff;
+  --bg-hill: #c3b3f5;
+  --bg-hill-2: #a98fee;
+}
+.bg-create {
+  --bg-top: #ffe1ea;
+  --bg-mid: #fff0f4;
+  --bg-bot: #fff7e8;
+  --bg-hill: #ffb6ce;
+  --bg-hill-2: #ff9dbc;
+}
+.bg-stories {
+  --bg-top: #ffe0d6;
+  --bg-mid: #fff1ea;
+  --bg-bot: #fff8e6;
+  --bg-hill: #ffbfa3;
+  --bg-hill-2: #ffa585;
+}
+
+.bg-cloud {
+  position: absolute;
+  width: 180px;
+  height: 58px;
+  background: rgba(255, 255, 255, 0.78);
+  border-radius: var(--r-pill);
+  transform: scale(var(--scale, 1));
+  animation-name: drift;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+
+/* Two puffs turn a pill into a cloud without an image. */
+.bg-cloud::before,
+.bg-cloud::after {
+  content: "";
+  position: absolute;
+  background: inherit;
+  border-radius: 50%;
+}
+.bg-cloud::before {
+  width: 84px;
+  height: 84px;
+  left: 26px;
+  top: -38px;
+}
+.bg-cloud::after {
+  width: 62px;
+  height: 62px;
+  right: 30px;
+  top: -26px;
+}
+
+@keyframes drift {
+  from {
+    transform: translateX(0) scale(var(--scale, 1));
+  }
+  to {
+    transform: translateX(160vw) scale(var(--scale, 1));
+  }
+}
+
+.bg-bubble {
+  position: absolute;
+  bottom: -14vh;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 32% 28%,
+    rgba(255, 255, 255, 0.9),
+    rgba(255, 255, 255, 0.28) 46%,
+    rgba(255, 255, 255, 0.1) 70%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  animation-name: rise;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes rise {
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.85;
+  }
+  88% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateY(-118vh) translateX(24px);
+    opacity: 0;
+  }
+}
+
+.bg-star {
+  position: absolute;
+  background: #fff;
+  clip-path: polygon(
+    50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%,
+    50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%
+  );
+  opacity: 0.65;
+  animation: twinkle 3.4s ease-in-out infinite;
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.15);
+  }
+}
+
+.bg-hill {
+  position: absolute;
+  left: -20%;
+  right: -20%;
+  border-radius: 50% 50% 0 0;
+}
+.bg-hill-back {
+  bottom: -8%;
+  height: 26%;
+  background: var(--bg-hill);
+  opacity: 0.55;
+}
+.bg-hill-front {
+  bottom: -12%;
+  height: 20%;
+  background: var(--bg-hill-2);
+  opacity: 0.65;
+}
+
+/* ---------------------------------------------------------------
+   Top bar
+   --------------------------------------------------------------- */
+.topbar {
+  position: relative;
+  z-index: 20;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  height: var(--topbar-h);
+  padding: 0 var(--s-3);
+  padding-top: env(safe-area-inset-top);
+  padding-left: max(var(--s-3), env(safe-area-inset-left));
+  padding-right: max(var(--s-3), env(safe-area-inset-right));
+  box-sizing: content-box;
+}
+
+.topbar-left,
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex: none;
+}
+
+.topbar-title {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-shadow: 0 2px 0 rgba(255, 255, 255, 0.65);
 }
 
-/* --- full: the splash hero. --- */
-.brand-full {
+/* The gear is the only route out of the play area: visually recessive so it
+   does not invite a tap, but still a full-size target for the adult. */
+.topbar-settings {
+  opacity: 0.5;
+}
+
+/* Top-bar buttons sit below --tap-min's 88px because the bar would otherwise
+   eat a fifth of a phone screen. 68px is the floor: Back is genuinely used by
+   the child, so it stays generous even though it is chrome. */
+.topbar .btn {
+  min-width: 68px;
+  min-height: 68px;
+}
+
+/* ---------------------------------------------------------------
+   Home
+   --------------------------------------------------------------- */
+.home-screen,
+.category-screen,
+.game-screen {
+  background: transparent;
+}
+
+.home-body {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  display: flex;
   flex-direction: column;
-  gap: 2.5vmin;
+  gap: var(--s-3);
+  padding: var(--s-2) max(var(--s-4), env(safe-area-inset-left))
+    max(var(--s-3), env(safe-area-inset-bottom)) max(var(--s-4), env(safe-area-inset-right));
 }
 
-.brand-full .brand-icon {
-  width: clamp(140px, 42vmin, 300px);
-  height: clamp(140px, 42vmin, 300px);
-  border-radius: 22%;
-  filter: drop-shadow(0 14px 26px rgba(0, 0, 0, 0.25));
+/* 2x3 portrait / 3x2 landscape. Fixed counts, because six is the whole point:
+   the screen never scrolls, so the grid must never need to. */
+.cat-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: var(--s-3);
 }
 
-.brand-full .brand-name {
-  font-size: clamp(26px, 6.5vmin, 52px);
-  color: #7a4b12;
+@media (orientation: landscape) {
+  .cat-grid {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+  }
+}
+
+.cat-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: var(--s-2);
+  border-radius: var(--r-xl);
+  background: linear-gradient(180deg, var(--tile-lite) 0%, var(--tile-base) 100%);
+  box-shadow: var(--sh-solid-lg) var(--tile-shade), var(--sh-3);
+  color: var(--ink);
+  overflow: hidden;
+  container-type: size;
+}
+
+.cat-emoji {
+  font-size: min(40cqmin, 30cqmax);
+  line-height: 1;
+  filter: drop-shadow(0 3px 5px rgba(63, 51, 85, 0.2));
+}
+
+.cat-label {
+  font-size: min(15cqmin, 11cqmax);
+  font-weight: 700;
+}
+
+.cat-blurb {
+  font-size: min(8.5cqmin, 6cqmax);
+  font-weight: 500;
+  line-height: 1.15;
+  opacity: 0.62;
+  text-align: center;
+  padding-inline: 4px;
+  /* Two lines maximum: the blurb is a hint for the grown-up, never a
+     paragraph, and it must not push the picture out of the tile. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cat-learn {
+  --tile-base: var(--sun);
+  --tile-lite: #ffd970;
+  --tile-shade: #d9a316;
+}
+.cat-discover {
+  --tile-base: var(--mint);
+  --tile-lite: #84e4c0;
+  --tile-shade: #35ab82;
+}
+.cat-think {
+  --tile-base: var(--grape);
+  --tile-lite: #c0aaff;
+  --tile-shade: #7f5cd6;
+}
+.cat-play {
+  --tile-base: var(--sky);
+  --tile-lite: #7ecffb;
+  --tile-shade: #2a9ad4;
+}
+.cat-create {
+  --tile-base: var(--bubblegum);
+  --tile-lite: #ffabc6;
+  --tile-shade: #dd6790;
+}
+.cat-stories {
+  --tile-base: var(--coral);
+  --tile-lite: #ffa588;
+  --tile-shade: #d96543;
+}
+
+/* --- shortcut rows (Favourites / Recently played) --- */
+.shortcut-row {
+  flex: none;
+}
+
+.shortcut-title {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  opacity: 0.75;
+  margin-bottom: var(--s-1);
+}
+
+.shortcut-items {
+  display: flex;
+  gap: var(--s-2);
+}
+
+.chip {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 62px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: var(--s-1);
+  border-radius: var(--r-lg);
+  background: var(--surface-veil-strong);
+  box-shadow: 0 4px 0 rgba(63, 51, 85, 0.1), var(--sh-1);
+}
+
+.chip-emoji {
+  font-size: clamp(20px, 4.6vmin, 32px);
+  line-height: 1;
+}
+
+.chip-label {
+  font-size: clamp(9px, 2vmin, 13px);
+  font-weight: 600;
+  color: var(--ink-soft);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------
+   Game cards
+   --------------------------------------------------------------- */
+.card-grid {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-auto-rows: 1fr;
+  gap: var(--s-3);
+  padding: var(--s-2) max(var(--s-4), env(safe-area-inset-left))
+    max(var(--s-4), env(safe-area-inset-bottom)) max(var(--s-4), env(safe-area-inset-right));
+}
+
+@media (min-width: 560px), (orientation: landscape) {
+  .card-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.card {
+  position: relative;
+  border-radius: var(--r-xl);
+  background: var(--surface);
+  box-shadow: var(--sh-solid) var(--card-shade), var(--sh-2);
+  overflow: hidden;
+}
+
+.card-hit {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: var(--s-2) var(--s-3);
+  text-align: left;
+}
+
+.card-thumb {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: clamp(64px, 17vmin, 104px);
+  aspect-ratio: 1;
+  border-radius: var(--r-lg);
+  background: linear-gradient(180deg, var(--card-lite) 0%, var(--card-base) 100%);
+  box-shadow: inset 0 -3px 8px rgba(0, 0, 0, 0.08);
+}
+
+.card-emoji {
+  font-size: clamp(32px, 9vmin, 58px);
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(63, 51, 85, 0.22));
+}
+
+.card-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.card-title {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-blurb {
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--ink-soft);
+  opacity: 0.85;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Visual only — pointer-events: none. See the note in GameCard.jsx: the whole
+   card is the target, and a small button inside it would create dead zones. */
+.card-play {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin-right: var(--s-5);
+  border-radius: 50%;
+  background: var(--card-base);
+  color: var(--on-color);
+  box-shadow: var(--sh-1);
+  pointer-events: none;
+}
+
+.card-fav {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-width: var(--tap-min);
+  min-height: var(--tap-min);
+  /* Full-size hit area, small visual: the star is deliberately quiet so it
+     doesn't compete with the card, but still easy to hit deliberately. */
+  display: grid;
+  place-items: center;
+  color: var(--ink-faint);
+  transition: color var(--t-fast) var(--ease-out);
+}
+
+.card-fav.is-on {
+  color: var(--sun);
+  filter: drop-shadow(0 2px 4px rgba(217, 163, 22, 0.5));
+}
+
+.card-sky {
+  --card-base: var(--sky);
+  --card-lite: #7ecffb;
+  --card-shade: #cfe9f7;
+}
+.card-sun {
+  --card-base: var(--sun);
+  --card-lite: #ffd970;
+  --card-shade: #f5e2ba;
+}
+.card-coral {
+  --card-base: var(--coral);
+  --card-lite: #ffa588;
+  --card-shade: #f7d9cf;
+}
+.card-grape {
+  --card-base: var(--grape);
+  --card-lite: #c0aaff;
+  --card-shade: #ddd4f7;
+}
+.card-mint {
+  --card-base: var(--mint);
+  --card-lite: #84e4c0;
+  --card-shade: #c8ecdd;
+}
+.card-bubblegum {
+  --card-base: var(--bubblegum);
+  --card-lite: #ffabc6;
+  --card-shade: #f7d3de;
+}
+.card-lavender {
+  --card-base: var(--lavender);
+  --card-lite: #d0cdff;
+  --card-shade: #ded d f7;
+  --card-shade: #dedcf7;
+}
+
+/* ---------------------------------------------------------------
+   Game shell
+   --------------------------------------------------------------- */
+.game-body {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-3);
+  padding: var(--s-2) max(var(--s-3), env(safe-area-inset-left))
+    max(var(--s-3), env(safe-area-inset-bottom)) max(var(--s-3), env(safe-area-inset-right));
 }
 
 /* ---------------------------------------------------------------
@@ -247,6 +813,57 @@ body {
 }
 
 /* ---------------------------------------------------------------
+   Brand
+   --------------------------------------------------------------- */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.55em;
+  pointer-events: none;
+  user-select: none;
+}
+
+.brand-icon {
+  display: block;
+  border-radius: 24%;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 8px rgba(63, 51, 85, 0.28));
+}
+
+.brand-name {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.brand-mini .brand-icon {
+  width: clamp(34px, 7vmin, 46px);
+  height: clamp(34px, 7vmin, 46px);
+}
+
+.brand-mini .brand-name {
+  font-size: var(--fs-sm);
+  color: var(--ink);
+}
+
+.brand-full {
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+.brand-full .brand-icon {
+  width: clamp(140px, 42vmin, 300px);
+  height: clamp(140px, 42vmin, 300px);
+  border-radius: 22%;
+  filter: drop-shadow(0 16px 30px rgba(63, 51, 85, 0.3));
+}
+
+.brand-full .brand-name {
+  font-size: var(--fs-2xl);
+  font-weight: 700;
+  color: #7a4b12;
+}
+
+/* ---------------------------------------------------------------
    Splash
    --------------------------------------------------------------- */
 .splash {
@@ -254,179 +871,44 @@ body {
   height: 100%;
   border: none;
   cursor: pointer;
-  background: radial-gradient(circle at 50% 35%, #fff6d8 0%, var(--sun) 65%, #f6b93b 100%);
-  gap: 1vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-4);
+  background: radial-gradient(circle at 50% 34%, #fff6d8 0%, var(--sun) 62%, #f0b21f 100%);
 }
 
-/* Wrapper for the breathing animation only — the shadow lives on .brand-icon
-   so it follows the icon's rounded corners rather than its bounding box. */
 .splash-art {
   line-height: 1;
 }
 
 .splash-hint {
-  font-size: clamp(40px, 12vmin, 100px);
+  font-size: clamp(40px, 12vmin, 96px);
   line-height: 1;
 }
 
 .splash-text {
-  font-size: clamp(22px, 5vmin, 44px);
-  font-weight: 700;
+  font-size: var(--fs-lg);
+  font-weight: 600;
   color: #7a4b12;
 }
 
 /* ---------------------------------------------------------------
-   Home
+   Scenes (tap-to-discover)
    --------------------------------------------------------------- */
-.home {
-  background: linear-gradient(160deg, #cdeafe 0%, #e8f7d4 55%, #fdf6e3 100%);
-  padding: max(3vmin, env(safe-area-inset-top)) max(3vmin, env(safe-area-inset-right))
-    max(3vmin, env(safe-area-inset-bottom)) max(3vmin, env(safe-area-inset-left));
-}
-
-/* Fixed column count with `grid-auto-rows: 1fr`: rows are created as needed
-   and share the container's height equally. That means the menu can grow to
-   any number of activities without ever overflowing — this app never scrolls,
-   so a grid that adds *pages* or *height* would be a bug. */
-.home-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-auto-rows: 1fr;
-  gap: clamp(8px, 2vmin, 20px);
-  width: 100%;
-  height: 100%;
-  max-width: 900px;
-  max-height: 1100px;
-  /* Reserve the top strip for the settings gear rather than letting it float
-     over a play tile — a mis-tap there interrupts play with a gate. */
-  padding-top: var(--corner-gutter);
-}
-
-/* Three across once there is room, so tiles stay closer to square than to
-   thin vertical slots as the menu grows. */
-@media (min-width: 360px) {
-  .home-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (orientation: landscape) {
-  .home-grid {
-    grid-template-columns: repeat(5, 1fr);
-  }
-}
-
-.home-tile {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 6px;
-  border-radius: clamp(14px, 3.5vmin, 32px);
-  background: var(--tile-color);
-  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.14), 0 10px 20px rgba(0, 0, 0, 0.12);
-  will-change: transform;
-  container-type: size;
-  overflow: hidden;
-}
-
-/* Emoji are sized against their own TILE, not the viewport. A vmin-based size
-   looks right in portrait and shrinks to a dot in landscape (and vice versa);
-   cqmin tracks whatever the tile actually is. The clamp() above the @supports
-   is the fallback for engines without container queries. */
-.home-tile-emoji {
-  font-size: clamp(48px, 16vmin, 130px);
-  line-height: 1;
-}
-
-.home-tile-label {
-  font-size: clamp(16px, 3.4vmin, 30px);
-  font-weight: 700;
-  color: rgba(0, 0, 0, 0.55);
-}
-
-@supports (container-type: size) {
-  .home-tile-emoji {
-    font-size: min(42cqmin, 30cqmax);
-  }
-  .home-tile-label {
-    font-size: min(14cqmin, 10cqmax);
-  }
-}
-
-/* Corner controls. Small on screen but still a full-size touch target —
-   the visual is inset, the hit area is not. */
-.settings-button,
-.home-button,
-.fc-repeat,
-.ct-replay {
-  position: absolute;
-  z-index: 20;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.82);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
-  font-size: clamp(24px, 5vmin, 40px);
-  width: var(--tap-min);
-  height: var(--tap-min);
-}
-
-.settings-button {
-  top: max(10px, env(safe-area-inset-top));
-  right: max(10px, env(safe-area-inset-right));
-  opacity: 0.45; /* visually recessive; it is not for the child */
-}
-
-.home-button {
-  bottom: max(10px, env(safe-area-inset-bottom));
-  left: max(10px, env(safe-area-inset-left));
-}
-
-.fc-repeat,
-.ct-replay {
-  bottom: max(10px, env(safe-area-inset-bottom));
-  right: max(10px, env(safe-area-inset-right));
-  position: absolute;
-}
-
-.missing-home {
-  font-size: clamp(48px, 14vmin, 110px);
-}
-
-/* ---------------------------------------------------------------
-   Scene (Farm)
-   --------------------------------------------------------------- */
-.scene {
-  background: linear-gradient(#bde3ff 0%, #bde3ff 45%, #a7d489 45%, #7cc576 100%);
-}
-
-/* Fixed 2x3 / 3x2 rather than auto-fit: the tile count must not change with
-   the viewport, because this app never scrolls. Six always fits. */
-/* `grid-auto-rows: 1fr` rather than a fixed row count: scenes hold 6 or 8
-   characters and the rows must adapt without ever overflowing, because this
-   app never scrolls. Columns stay fixed so the tile count per row is
-   predictable — `auto-fit` would reflow unpredictably across devices. */
 .scene-grid {
+  width: 100%;
+  height: 100%;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   grid-auto-rows: 1fr;
-  gap: clamp(10px, 2.5vmin, 26px);
-  width: 100%;
-  height: 100%;
-  padding: calc(var(--brand-gutter) + env(safe-area-inset-top))
-    max(2vmin, env(safe-area-inset-right))
-    calc(var(--corner-gutter) + env(safe-area-inset-bottom))
-    max(2vmin, env(safe-area-inset-left));
+  gap: var(--s-3);
 }
 
-/* Landscape has height to spare nowhere and width to spare everywhere, so the
-   corner clearance moves to the sides instead of the bottom. */
 @media (orientation: landscape) {
   .scene-grid {
     grid-template-columns: repeat(4, 1fr);
-    padding-bottom: max(2vmin, env(safe-area-inset-bottom));
-    padding-left: calc(var(--corner-gutter) + env(safe-area-inset-left));
-    padding-right: calc(var(--corner-gutter) + env(safe-area-inset-right));
   }
 }
 
@@ -434,9 +916,9 @@ body {
   position: relative;
   width: 100%;
   height: 100%;
-  border-radius: clamp(18px, 4vmin, 36px);
+  border-radius: var(--r-lg);
   background: var(--tile-color);
-  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.12), 0 10px 22px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--sh-solid) rgba(63, 51, 85, 0.14), var(--sh-2);
   will-change: transform;
   container-type: size;
 }
@@ -444,174 +926,69 @@ body {
 .character-emoji {
   font-size: clamp(44px, 15vmin, 120px);
   line-height: 1;
-  pointer-events: none; /* taps always land on the button, never the glyph */
+  pointer-events: none;
+  filter: drop-shadow(0 3px 6px rgba(63, 51, 85, 0.18));
 }
 
 @supports (container-type: size) {
   .character-emoji {
-    font-size: min(62cqmin, 44cqmax);
+    font-size: min(60cqmin, 44cqmax);
   }
 }
 
 /* ---------------------------------------------------------------
-   Find the Color
+   Find the Colour
    --------------------------------------------------------------- */
-.find-color {
-  background: linear-gradient(160deg, #fdf6e3 0%, #ffe8d6 100%);
-  justify-content: flex-start;
-  padding: calc(var(--brand-gutter) + env(safe-area-inset-top)) 3vmin
-    max(3vmin, env(safe-area-inset-bottom));
-  gap: 2vmin;
-}
-
 .fc-prompt {
   display: grid;
   place-items: center;
-  padding-top: 1vmin;
-  flex: 0 0 auto;
+  flex: none;
 }
 
 .fc-prompt-swatch {
-  width: clamp(70px, 18vmin, 150px);
-  height: clamp(70px, 18vmin, 150px);
+  width: clamp(66px, 16vmin, 130px);
+  height: clamp(66px, 16vmin, 130px);
   border-radius: 50%;
-  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.15), 0 10px 24px rgba(0, 0, 0, 0.16);
+  box-shadow: var(--sh-solid) rgba(0, 0, 0, 0.16), var(--sh-3);
   will-change: transform;
 }
 
-.fc-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat(2, 1fr);
-  gap: clamp(12px, 3vmin, 30px);
-  width: 100%;
-  flex: 1 1 auto;
-  min-height: 0;
-  padding: 2vmin 2vmin var(--corner-gutter);
-}
-
-@media (orientation: landscape) {
-  .fc-grid {
-    grid-template-columns: repeat(4, 1fr);
-    grid-template-rows: 1fr;
-    padding: 1vmin var(--corner-gutter);
-  }
-}
-
-.fc-tile {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  border-radius: clamp(18px, 4vmin, 36px);
-  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.14), 0 10px 22px rgba(0, 0, 0, 0.12);
-  will-change: transform;
-}
-
-.fc-tile.is-won {
-  box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.9),
-    0 0 44px 14px rgba(255, 255, 255, 0.75);
-  z-index: 4;
-}
-
-/* ---------------------------------------------------------------
-   Shape Pop
-   --------------------------------------------------------------- */
-.shape-pop {
-  background: linear-gradient(180deg, #0f3f6b 0%, #1f6fa8 55%, #48b0d8 100%);
-}
-
-.bubble {
-  position: absolute;
-  border: none;
-  padding: 0;
-  box-shadow: inset 0 -10px 22px rgba(0, 0, 0, 0.18),
-    inset 0 10px 18px rgba(255, 255, 255, 0.35), 0 6px 20px rgba(0, 0, 0, 0.2);
-  will-change: transform;
-}
-
-.bubble-circle {
-  border-radius: 50%;
-}
-.bubble-square {
-  border-radius: 14%;
-}
-.bubble-triangle {
-  clip-path: polygon(50% 4%, 96% 94%, 4% 94%);
-  border-radius: 0;
-  box-shadow: none;
-}
-.bubble-star {
-  clip-path: polygon(
-    50% 2%,
-    61% 36%,
-    98% 36%,
-    68% 58%,
-    79% 92%,
-    50% 71%,
-    21% 92%,
-    32% 58%,
-    2% 36%,
-    39% 36%
-  );
-  border-radius: 0;
-  box-shadow: none;
-}
-
-/* ---------------------------------------------------------------
-   Find it — listen and point
-   --------------------------------------------------------------- */
-.find-it {
-  background: linear-gradient(160deg, #eef7ff 0%, #dfeeff 55%, #ffeedd 100%);
-  justify-content: flex-start;
-  padding: calc(var(--brand-gutter) + env(safe-area-inset-top)) 3vmin
-    max(3vmin, env(safe-area-inset-bottom));
-  gap: 1.5vmin;
-}
-
-/* The question is the entire task, so replaying it is the biggest control on
-   screen — not a corner icon. */
-.fi-ask {
-  flex: 0 0 auto;
-  width: clamp(78px, 17vmin, 130px);
-  height: clamp(78px, 17vmin, 130px);
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.12), 0 10px 24px rgba(0, 0, 0, 0.14);
-  font-size: clamp(34px, 8vmin, 60px);
-}
-
+.fc-grid,
 .fi-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   grid-auto-rows: 1fr;
-  gap: clamp(12px, 3vmin, 30px);
+  gap: var(--s-3);
   width: 100%;
   flex: 1 1 auto;
   min-height: 0;
-  padding: 2vmin 2vmin var(--corner-gutter);
 }
 
 @media (orientation: landscape) {
+  .fc-grid,
   .fi-grid {
     grid-template-columns: repeat(4, 1fr);
-    padding: 1vmin var(--corner-gutter);
   }
 }
 
+.fc-tile,
 .fi-tile {
   position: relative;
   width: 100%;
   height: 100%;
-  border-radius: clamp(18px, 4vmin, 36px);
-  background: var(--tile-color);
-  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.14), 0 10px 22px rgba(0, 0, 0, 0.12);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-solid) rgba(0, 0, 0, 0.14), var(--sh-2);
   will-change: transform;
   container-type: size;
 }
 
+.fi-tile {
+  background: var(--tile-color);
+}
+
+.fc-tile.is-won,
 .fi-tile.is-won {
-  box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.9),
-    0 0 44px 14px rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.92), 0 0 44px 14px rgba(255, 255, 255, 0.8);
   z-index: 4;
 }
 
@@ -627,281 +1004,102 @@ body {
   }
 }
 
-/* ---------------------------------------------------------------
-   Deck — shared chrome for the flashcard games (Letters, Numbers)
-   --------------------------------------------------------------- */
-.deck {
-  justify-content: center;
-  padding: calc(var(--brand-gutter) + env(safe-area-inset-top)) 0
-    max(3vmin, env(safe-area-inset-bottom));
-}
-
-/* One source of truth for the arrow width, so the stage padding and the arrow
-   can never drift apart and let the card slide under an arrow. */
-:root {
-  --deck-arrow-w: clamp(56px, 13vmin, 96px);
-}
-
-.deck-stage {
-  display: grid;
-  place-items: center;
-  width: 100%;
-  height: 100%;
-  /* Clear the full-height arrows down each edge. */
-  padding: 0 calc(var(--deck-arrow-w) + 6px) var(--corner-gutter);
-}
-
-/* Arrows run the whole height of the screen edge: an enormous target, and
-   well clear of the Home and replay buttons in the bottom corners.
-   min-width is reset because .tappable would otherwise force 88px and push
-   the arrow out over the card. 56px is a deliberate exception to the 88px
-   rule — the target is ~660px TALL, so it is far easier to hit than any
-   88x88 button; the rule exists to guarantee a finger lands, and a
-   full-height strip satisfies that comfortably. */
-.deck-arrow {
-  position: absolute;
-  top: var(--brand-gutter);
-  bottom: var(--corner-gutter);
-  z-index: 12;
-  min-width: 0;
-  min-height: 0;
-  width: var(--deck-arrow-w);
-  height: auto;
-  border-radius: 0;
-  background: rgba(255, 255, 255, 0.28);
-  font-size: clamp(44px, 10vmin, 80px);
-  font-weight: 700;
-  color: rgba(0, 0, 0, 0.45);
-  line-height: 1;
-}
-
-.deck-prev {
-  left: env(safe-area-inset-left);
-  border-radius: 0 22px 22px 0;
-}
-
-.deck-next {
-  right: env(safe-area-inset-right);
-  border-radius: 22px 0 0 22px;
-}
-
-.deck-replay {
-  position: absolute;
-  z-index: 20;
-  bottom: max(10px, env(safe-area-inset-bottom));
-  right: max(10px, env(safe-area-inset-right));
-  width: var(--tap-min);
-  height: var(--tap-min);
+/* The question is the whole task in Find it, so replaying it is the biggest
+   control on the screen rather than a corner icon. */
+.fi-ask {
+  flex: none;
+  width: clamp(74px, 16vmin, 120px);
+  height: clamp(74px, 16vmin, 120px);
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.82);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
-  font-size: clamp(24px, 5vmin, 40px);
+  background: var(--surface-veil-strong);
+  box-shadow: var(--sh-solid) rgba(63, 51, 85, 0.12), var(--sh-2);
+  font-size: clamp(32px, 7.5vmin, 56px);
 }
 
 /* ---------------------------------------------------------------
-   Learn Letters
+   Shape Pop / Catch the Stars — free-floating play areas
    --------------------------------------------------------------- */
-.learn-letters {
-  background: linear-gradient(160deg, #fff6e5 0%, #ffe8cc 100%);
-}
-
-/* Height follows the content rather than filling the stage — a full-height
-   card holding one letter reads as a mostly-empty box.
-   container-type is `inline-size`, not `size`: `size` demands a definite
-   height, which would force height:100% straight back. So the type scale
-   below is driven by the card's WIDTH (cqi), capped in vh so a short screen
-   can't overflow. */
-.letter-card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1.5vmin;
-  width: 100%;
-  height: auto;
-  min-height: 55%;
-  max-width: 620px;
-  max-height: 100%;
-  padding: 4vmin 3vmin;
-  border-radius: clamp(22px, 5vmin, 44px);
-  background: var(--tile-color);
-  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.13), 0 14px 30px rgba(0, 0, 0, 0.14);
-  container-type: inline-size;
-}
-
-.letter-glyph {
-  display: flex;
-  align-items: baseline;
-  gap: 0.12em;
-  font-size: clamp(56px, 20vmin, 150px);
-  font-weight: 800;
-  line-height: 1;
-  color: rgba(0, 0, 0, 0.72);
-  pointer-events: none;
-}
-
-/* Lowercase shown alongside: children meet it far more often in real books,
-   yet most alphabet toys teach capitals only. */
-.letter-lower {
-  font-size: 0.62em;
-  opacity: 0.62;
-}
-
-.letter-emoji {
-  font-size: clamp(48px, 18vmin, 130px);
-  line-height: 1;
-  pointer-events: none;
-}
-
-.letter-word {
-  font-size: clamp(20px, 5vmin, 40px);
-  font-weight: 700;
-  color: rgba(0, 0, 0, 0.6);
-  pointer-events: none;
-}
-
-@supports (container-type: inline-size) {
-  .letter-glyph {
-    font-size: min(44cqi, 19vh);
-  }
-  .letter-emoji {
-    font-size: min(38cqi, 17vh);
-  }
-  .letter-word {
-    font-size: min(13cqi, 6vh);
-  }
-}
-
-/* ---------------------------------------------------------------
-   Learn Numbers
-   --------------------------------------------------------------- */
-.learn-numbers {
-  background: linear-gradient(160deg, #eaf4ff 0%, #d6e9ff 100%);
-}
-
-/* Same reasoning as .letter-card: the card grows with the count instead of
-   always filling the screen, so "one apple" isn't a huge empty rectangle. */
-.number-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2.5vmin;
-  width: 100%;
-  height: auto;
-  min-height: 45%;
-  max-width: 640px;
-  max-height: 100%;
-  padding: 4vmin 3vmin;
-  border-radius: clamp(22px, 5vmin, 44px);
-  background: var(--tile-color);
-  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.13), 0 14px 30px rgba(0, 0, 0, 0.14);
-}
-
-.number-glyph {
-  display: flex;
-  align-items: center;
-  gap: 0.35em;
-  flex: 0 0 auto;
-}
-
-.number-digit {
-  font-size: clamp(50px, 16vmin, 120px);
-  font-weight: 800;
-  line-height: 1;
-  color: rgba(0, 0, 0, 0.72);
-}
-
-.number-word {
-  font-size: clamp(22px, 6vmin, 48px);
-  font-weight: 700;
-  color: rgba(0, 0, 0, 0.5);
-}
-
-/* Flex-wrap, not a fixed column count. A grid with N columns divides whatever
-   width is left after the deck arrows, which on a 320 px phone squeezed ten
-   objects down to 43 px each — unhittable for a toddler. Wrapping instead
-   holds every object at a usable size and adds a row when it runs out of
-   width, so the count stays countable on any screen. */
-.number-items {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-content: center;
-  gap: clamp(5px, 1.6vmin, 14px);
-  flex: 0 1 auto;
-  min-height: 0;
-}
-
-.number-item {
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  /* Below --tap-min by design: these are counters inside a card, not
-     navigation, and the deck's own controls are all full size. The floor of
-     56 px is what keeps them comfortably hittable. */
+.bubble,
+.cs-star {
+  position: absolute;
+  border: none;
+  padding: 0;
   min-width: 0;
   min-height: 0;
-  width: clamp(56px, 13vmin, 80px);
-  height: clamp(56px, 13vmin, 80px);
-  font-size: clamp(32px, 8vmin, 58px);
-  line-height: 1;
-  border-radius: 22%;
   will-change: transform;
-  transition: background-color 140ms ease-out;
 }
 
-.number-item.is-lit {
-  background: rgba(255, 255, 255, 0.75);
-  box-shadow: 0 0 22px 6px rgba(255, 255, 255, 0.6);
+.bubble {
+  box-shadow: inset 0 -10px 22px rgba(0, 0, 0, 0.18),
+    inset 0 10px 18px rgba(255, 255, 255, 0.35), var(--sh-2);
+}
+
+.bubble-circle {
+  border-radius: 50%;
+}
+.bubble-square {
+  border-radius: 14%;
+}
+.bubble-triangle {
+  clip-path: polygon(50% 4%, 96% 94%, 4% 94%);
+  border-radius: 0;
+  box-shadow: none;
+}
+.bubble-star {
+  clip-path: polygon(
+    50% 2%, 61% 36%, 98% 36%, 68% 58%, 79% 92%,
+    50% 71%, 21% 92%, 32% 58%, 2% 36%, 39% 36%
+  );
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.cs-glyph {
+  font-size: clamp(30px, 11vmin, 90px);
+  line-height: 1;
+  pointer-events: none;
+  filter: drop-shadow(0 3px 8px rgba(255, 210, 80, 0.6));
+}
+
+.catch-stars .game-body {
+  padding: 0;
 }
 
 /* ---------------------------------------------------------------
    Copy the Tune
    --------------------------------------------------------------- */
-.copy-tune {
-  background: linear-gradient(160deg, #2b2d42 0%, #4a4e69 100%);
-  justify-content: center;
-  padding: calc(var(--brand-gutter) + env(safe-area-inset-top)) 3vmin
-    max(3vmin, env(safe-area-inset-bottom));
-  gap: 2vmin;
-}
-
 .ct-status {
-  font-size: clamp(34px, 9vmin, 78px);
+  font-size: clamp(30px, 8vmin, 66px);
   line-height: 1;
-  flex: 0 0 auto;
-  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.35));
+  flex: none;
+  filter: drop-shadow(0 3px 8px rgba(63, 51, 85, 0.25));
 }
 
 .ct-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   grid-template-rows: repeat(2, 1fr);
-  gap: clamp(12px, 3vmin, 30px);
-  width: min(100%, 62vh);
+  gap: var(--s-3);
+  width: min(100%, 58vh);
   aspect-ratio: 1;
-  max-height: 62vh;
-  padding: 1vmin;
+  max-height: 58vh;
 }
 
 .ct-pad {
   position: relative;
   width: 100%;
   height: 100%;
-  border-radius: clamp(20px, 5vmin, 44px);
+  border-radius: var(--r-xl);
   background: var(--pad-color);
-  opacity: 0.62;
-  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.25);
-  transition: opacity 120ms ease-out, box-shadow 120ms ease-out;
+  opacity: 0.66;
+  box-shadow: var(--sh-solid-lg) rgba(0, 0, 0, 0.22);
+  transition: opacity var(--t-fast) var(--ease-out), box-shadow var(--t-fast) var(--ease-out);
   will-change: transform, opacity;
 }
 
 .ct-pad.is-lit {
   opacity: 1;
-  box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.85),
-    0 0 50px 16px rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.85), 0 0 50px 16px rgba(255, 255, 255, 0.55);
   z-index: 3;
 }
 
@@ -919,8 +1117,648 @@ body {
   pointer-events: none;
 }
 
+.ct-replay,
+.deck-replay {
+  position: absolute;
+  z-index: 20;
+  bottom: max(var(--s-3), env(safe-area-inset-bottom));
+  right: max(var(--s-3), env(safe-area-inset-right));
+  width: var(--tap-min);
+  height: var(--tap-min);
+  border-radius: 50%;
+  background: var(--surface-veil-strong);
+  box-shadow: var(--sh-solid) rgba(63, 51, 85, 0.12), var(--sh-2);
+  font-size: clamp(24px, 5vmin, 40px);
+}
+
 /* ---------------------------------------------------------------
-   Parent gate — the only screen a child is meant to fail
+   Deck (Letters / Numbers flashcards)
+   --------------------------------------------------------------- */
+:root {
+  --deck-arrow-w: clamp(56px, 13vmin, 96px);
+}
+
+.deck .game-body {
+  padding-bottom: calc(var(--tap-min) + var(--s-3));
+}
+
+.deck-stage {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  padding: 0 calc(var(--deck-arrow-w) + var(--s-2));
+}
+
+/* Full-height edge arrows: an enormous target, and clear of the corner
+   buttons. min-width is reset because .tappable's 88px would otherwise push
+   the arrow out over the card. 56px wide is a deliberate exception — the
+   target is several hundred px tall, far easier to hit than any 88x88 button. */
+.deck-arrow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 12;
+  min-width: 0;
+  min-height: 0;
+  width: var(--deck-arrow-w);
+  border-radius: 0;
+  background: rgba(255, 255, 255, 0.32);
+  font-size: clamp(40px, 9vmin, 72px);
+  font-weight: 600;
+  color: var(--ink-soft);
+  line-height: 1;
+}
+
+.deck-prev {
+  left: 0;
+  border-radius: 0 var(--r-lg) var(--r-lg) 0;
+}
+.deck-next {
+  right: 0;
+  border-radius: var(--r-lg) 0 0 var(--r-lg);
+}
+
+.letter-card,
+.number-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: auto;
+  max-height: 100%;
+  border-radius: var(--r-xl);
+  background: var(--tile-color);
+  box-shadow: var(--sh-solid-lg) rgba(63, 51, 85, 0.15), var(--sh-3);
+}
+
+/* container-type is inline-size, not size: `size` demands a definite height,
+   which would force height:100% straight back and re-create the mostly-empty
+   card. So the type scale follows the card's WIDTH, capped in vh so a short
+   screen still cannot overflow. */
+.letter-card {
+  gap: var(--s-2);
+  min-height: 55%;
+  max-width: 620px;
+  padding: var(--s-5) var(--s-4);
+  container-type: inline-size;
+}
+
+.letter-glyph {
+  display: flex;
+  align-items: baseline;
+  gap: 0.12em;
+  font-size: clamp(56px, 20vmin, 150px);
+  font-weight: 700;
+  line-height: 1;
+  color: rgba(63, 51, 85, 0.8);
+  pointer-events: none;
+}
+
+/* Lowercase alongside: children meet it far more often in real books, yet
+   most alphabet toys teach capitals only. */
+.letter-lower {
+  font-size: 0.62em;
+  opacity: 0.6;
+}
+
+.letter-emoji {
+  font-size: clamp(48px, 18vmin, 130px);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.letter-word {
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  color: rgba(63, 51, 85, 0.65);
+  pointer-events: none;
+}
+
+@supports (container-type: inline-size) {
+  .letter-glyph {
+    font-size: min(44cqi, 19vh);
+  }
+  .letter-emoji {
+    font-size: min(38cqi, 17vh);
+  }
+  .letter-word {
+    font-size: min(13cqi, 6vh);
+  }
+}
+
+.number-card {
+  gap: var(--s-4);
+  min-height: 45%;
+  max-width: 640px;
+  padding: var(--s-5) var(--s-4);
+}
+
+.number-glyph {
+  display: flex;
+  align-items: center;
+  gap: 0.32em;
+  flex: none;
+}
+
+.number-digit {
+  font-size: clamp(50px, 16vmin, 118px);
+  font-weight: 700;
+  line-height: 1;
+  color: rgba(63, 51, 85, 0.8);
+}
+
+.number-word {
+  font-size: var(--fs-xl);
+  font-weight: 600;
+  color: rgba(63, 51, 85, 0.55);
+}
+
+/* Flex-wrap, not fixed columns: a column grid divides whatever width the deck
+   arrows leave, which squeezed ten objects to 43px on a small phone. Wrapping
+   holds every object at a hittable size and adds a row instead. */
+.number-items {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: center;
+  gap: var(--s-2);
+  flex: 0 1 auto;
+  min-height: 0;
+}
+
+.number-item {
+  display: grid;
+  place-items: center;
+  flex: none;
+  /* Below --tap-min by design: counters inside a card, not navigation. The
+     56px floor is what keeps them comfortably hittable. */
+  min-width: 0;
+  min-height: 0;
+  width: clamp(56px, 13vmin, 80px);
+  height: clamp(56px, 13vmin, 80px);
+  font-size: clamp(32px, 8vmin, 58px);
+  line-height: 1;
+  border-radius: 22%;
+  will-change: transform;
+  transition: background-color var(--t-fast) var(--ease-out);
+}
+
+.number-item.is-lit {
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 0 22px 6px rgba(255, 255, 255, 0.62);
+}
+
+/* ---------------------------------------------------------------
+   Memory Match
+   --------------------------------------------------------------- */
+/* 3x2 with a matching 3:2 aspect, so the cards come out square. Letting the
+   board fill the height instead stretched each card into a tall thin sliver
+   that read as a domino rather than a picture card. */
+.mm-board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: var(--s-3);
+  width: min(100%, 620px);
+  height: auto;
+  max-height: 100%;
+  aspect-ratio: 3 / 2;
+}
+
+@media (orientation: landscape) {
+  .mm-board {
+    width: auto;
+    height: min(100%, 460px);
+  }
+}
+
+.mm-card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  perspective: 900px;
+  background: none;
+}
+
+.mm-inner {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.mm-face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-lg);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  box-shadow: var(--sh-solid) rgba(63, 51, 85, 0.16), var(--sh-2);
+  font-size: clamp(34px, 11vmin, 76px);
+  line-height: 1;
+}
+
+.mm-back {
+  background: linear-gradient(180deg, #c0aaff 0%, var(--grape) 100%);
+  color: var(--on-color);
+}
+
+.mm-back-mark {
+  font-size: clamp(28px, 8vmin, 56px);
+  font-weight: 700;
+  opacity: 0.9;
+}
+
+.mm-front {
+  background: var(--tile-color);
+  transform: rotateY(180deg);
+}
+
+.mm-card.is-matched .mm-front {
+  box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.92), 0 0 34px 10px rgba(255, 255, 255, 0.7);
+}
+
+.mm-cheer {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------------
+   Shadow Match
+   --------------------------------------------------------------- */
+.sm-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-5);
+  width: 100%;
+  height: 100%;
+}
+
+.sm-shadow {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: clamp(110px, 26vmin, 200px);
+  height: clamp(110px, 26vmin, 200px);
+  border-radius: 50%;
+  background: var(--surface-veil-strong);
+  box-shadow: var(--sh-solid) rgba(63, 51, 85, 0.12), var(--sh-3);
+}
+
+/* brightness(0) flattens the emoji to a solid silhouette, so the shadow is
+   guaranteed to match the picture exactly — hand-drawn shadow art never does. */
+.sm-shadow-emoji {
+  font-size: clamp(58px, 15vmin, 120px);
+  line-height: 1;
+  filter: brightness(0) opacity(0.72);
+  pointer-events: none;
+}
+
+.sm-choices {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s-3);
+  width: 100%;
+  flex: 0 1 auto;
+  min-height: 0;
+}
+
+.sm-choice {
+  position: relative;
+  aspect-ratio: 1;
+  width: 100%;
+  border-radius: var(--r-lg);
+  background: var(--tile-color);
+  box-shadow: var(--sh-solid) rgba(63, 51, 85, 0.14), var(--sh-2);
+  container-type: size;
+}
+
+.sm-choice.is-won {
+  box-shadow: 0 0 0 7px rgba(255, 255, 255, 0.92), 0 0 40px 12px rgba(255, 255, 255, 0.8);
+  z-index: 4;
+}
+
+.sm-choice-emoji {
+  font-size: clamp(34px, 11vmin, 84px);
+  line-height: 1;
+  pointer-events: none;
+}
+
+@supports (container-type: size) {
+  .sm-choice-emoji {
+    font-size: 55cqmin;
+  }
+}
+
+/* ---------------------------------------------------------------
+   Peekaboo
+   --------------------------------------------------------------- */
+.pb-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-auto-rows: 1fr;
+  gap: var(--s-3);
+  width: 100%;
+  height: 100%;
+  max-width: 640px;
+}
+
+@media (orientation: landscape) {
+  .pb-grid {
+    grid-template-columns: repeat(3, 1fr);
+    max-width: 100%;
+  }
+}
+
+.pb-hole {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: var(--r-lg);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.12));
+  box-shadow: inset 0 4px 12px rgba(63, 51, 85, 0.12);
+}
+
+.pb-mound {
+  position: absolute;
+  left: -8%;
+  right: -8%;
+  bottom: -46%;
+  height: 88%;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #c9945f 0%, #a9743f 100%);
+  box-shadow: inset 0 6px 12px rgba(255, 255, 255, 0.24);
+  z-index: 2;
+}
+
+.pb-animal {
+  position: absolute;
+  left: 50%;
+  bottom: 22%;
+  translate: -50% 0;
+  display: grid;
+  place-items: center;
+  width: 62%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--tile-color);
+  font-size: clamp(30px, 9vmin, 64px);
+  line-height: 1;
+  box-shadow: var(--sh-2);
+  z-index: 1;
+  will-change: transform;
+}
+
+/* ---------------------------------------------------------------
+   Piano
+   --------------------------------------------------------------- */
+/* Portrait: eight keys STACKED as full-width bars, like a xylophone.
+   Side by side on a 320px phone each key is 28px wide — narrower than a
+   toddler's fingertip. Stacked, every key is the full width of the screen. */
+.piano {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  align-items: stretch;
+  width: 100%;
+  height: 100%;
+  max-width: 620px;
+  padding: var(--s-2);
+  border-radius: var(--r-xl);
+  background: rgba(255, 255, 255, 0.42);
+  box-shadow: inset 0 4px 14px rgba(63, 51, 85, 0.12);
+}
+
+/* Wide enough for real keys: switch to the upright piano layout. */
+@media (min-width: 620px), (orientation: landscape) {
+  .piano {
+    flex-direction: row;
+    max-width: none;
+    max-height: 74vh;
+  }
+}
+
+.piano-key {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 var(--s-4);
+  border-radius: var(--r-sm) var(--r-lg) var(--r-lg) var(--r-sm);
+  background: linear-gradient(90deg, #fff 0%, #fff 38%, var(--key-color) 38%, var(--key-color) 100%);
+  box-shadow: var(--sh-solid) rgba(63, 51, 85, 0.22), var(--sh-1);
+  transition: box-shadow var(--t-fast) var(--ease-out);
+  will-change: transform;
+}
+
+@media (min-width: 620px), (orientation: landscape) {
+  .piano-key {
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0 0 var(--s-4);
+    border-radius: var(--r-sm) var(--r-sm) var(--r-lg) var(--r-lg);
+    background: linear-gradient(180deg, #fff 0%, #fff 42%, var(--key-color) 42%, var(--key-color) 100%);
+  }
+}
+
+.piano-key.is-lit {
+  box-shadow: 0 2px 0 rgba(63, 51, 85, 0.22), 0 0 30px 8px rgba(255, 255, 255, 0.75);
+}
+
+.piano-emoji {
+  font-size: clamp(20px, 5.5vmin, 42px);
+  line-height: 1;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 3px rgba(63, 51, 85, 0.25));
+}
+
+/* ---------------------------------------------------------------
+   Colouring
+   --------------------------------------------------------------- */
+.col-stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  width: 100%;
+}
+
+.col-canvas {
+  width: auto;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--r-xl);
+  background: var(--surface);
+  box-shadow: var(--sh-solid) rgba(63, 51, 85, 0.12), var(--sh-3);
+}
+
+.col-part {
+  cursor: pointer;
+  transition: fill var(--t-base) var(--ease-out);
+}
+
+.col-tools {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  width: 100%;
+  max-width: 640px;
+}
+
+/* auto-fit with a 56px floor: the palette makes as many columns as actually
+   fit and wraps the rest onto another row. Eight swatches in one fixed row
+   collapsed to 18px on a 320px phone; even a fixed four still gave 43px.
+   Letting the count vary is what guarantees the SIZE never does. */
+.col-palette {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(56px, 1fr));
+  gap: var(--s-2);
+}
+
+.col-swatch {
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--swatch);
+  box-shadow: var(--sh-solid) rgba(0, 0, 0, 0.18), var(--sh-1);
+  will-change: transform;
+}
+
+.col-swatch.is-active {
+  box-shadow: 0 0 0 4px var(--surface), 0 0 0 8px var(--swatch), var(--sh-2);
+}
+
+@media (orientation: landscape) {
+  .col-palette {
+    grid-template-columns: repeat(8, 1fr);
+  }
+}
+
+/* ---------------------------------------------------------------
+   Rhymes
+   --------------------------------------------------------------- */
+/* Portrait: the card takes the full width and the two arrows drop onto a row
+   beneath it. Side arrows flanking the card left only ~96px of card on a 320px
+   screen — the rhyme text was unreadable. Landscape has the width to spare, so
+   it keeps the side-by-side arrangement. */
+.rh-stage {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-3);
+  width: 100%;
+  height: 100%;
+}
+
+.rh-card {
+  order: -1;
+  flex: 1 1 100%;
+}
+
+.rh-nav {
+  flex: none;
+}
+
+@media (orientation: landscape), (min-width: 620px) {
+  .rh-stage {
+    flex-wrap: nowrap;
+  }
+  .rh-card {
+    order: 0;
+    flex: 1 1 auto;
+  }
+}
+
+.rh-card {
+  min-width: 0;
+  max-width: 560px;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-4) var(--s-3);
+  border-radius: var(--r-xl);
+  background: var(--tile-color);
+  box-shadow: var(--sh-solid-lg) rgba(63, 51, 85, 0.15), var(--sh-3);
+  overflow: hidden;
+}
+
+.rh-emoji {
+  font-size: clamp(38px, 10vmin, 76px);
+  line-height: 1;
+  filter: drop-shadow(0 3px 6px rgba(63, 51, 85, 0.22));
+}
+
+.rh-title {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--ink);
+  text-align: center;
+}
+
+.rh-lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  width: 100%;
+  min-height: 0;
+}
+
+.rh-line {
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.42);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--ink);
+  text-align: center;
+  transition: background-color var(--t-base) var(--ease-out),
+    transform var(--t-base) var(--ease-out);
+}
+
+/* The line being read lights up — a child's first exposure to text being
+   tracked left to right. */
+.rh-line.is-active {
+  background: var(--surface);
+  font-weight: 700;
+  transform: scale(1.03);
+  box-shadow: var(--sh-2);
+}
+
+/* ---------------------------------------------------------------
+   Parent gate
    --------------------------------------------------------------- */
 .gate-backdrop {
   position: absolute;
@@ -928,35 +1766,36 @@ body {
   z-index: 100;
   display: grid;
   place-items: center;
-  background: rgba(20, 16, 14, 0.78);
-  backdrop-filter: blur(3px);
-  padding: 4vmin;
+  background: var(--scrim);
+  backdrop-filter: blur(4px);
+  padding: var(--s-4);
 }
 
 .gate-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2.4vmin;
+  gap: var(--s-4);
   width: min(560px, 92vw);
   max-height: 92vh;
-  padding: clamp(18px, 4vmin, 36px);
-  border-radius: clamp(18px, 4vmin, 32px);
-  background: #fffdf7;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+  padding: var(--s-5);
+  border-radius: var(--r-xl);
+  background: var(--surface);
+  box-shadow: var(--sh-4);
 }
 
 .gate-title {
-  font-size: clamp(15px, 2.6vmin, 22px);
+  font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  opacity: 0.5;
+  color: var(--ink-faint);
 }
 
 .gate-instructions {
-  font-size: clamp(19px, 3.6vmin, 30px);
-  font-weight: 700;
+  font-size: var(--fs-md);
+  font-weight: 600;
+  text-align: center;
 }
 
 .gate-hold {
@@ -970,7 +1809,7 @@ body {
   inset: 0;
   width: 100%;
   height: 100%;
-  transform: rotate(-90deg); /* start the fill at 12 o'clock */
+  transform: rotate(-90deg);
 }
 
 .gate-ring-track,
@@ -981,13 +1820,13 @@ body {
 }
 
 .gate-ring-track {
-  stroke: rgba(0, 0, 0, 0.09);
+  stroke: rgba(63, 51, 85, 0.1);
 }
 
+/* No CSS transition: the offset is already driven frame-by-frame from rAF,
+   and a transition on top would lag behind the finger. */
 .gate-ring-fill {
-  stroke: var(--barn);
-  /* No CSS transition: the offset is already driven frame-by-frame from rAF,
-     and a transition on top would lag behind the finger. */
+  stroke: var(--coral);
 }
 
 .gate-hold-icon {
@@ -999,25 +1838,31 @@ body {
 .gate-choices {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: clamp(8px, 2vmin, 16px);
+  gap: var(--s-2);
   width: 100%;
 }
 
 .gate-choice {
-  padding: clamp(10px, 2.4vmin, 20px);
-  border-radius: 16px;
-  background: #f0ece1;
-  font-size: clamp(24px, 5vmin, 40px);
+  min-width: 0;
+  min-height: 64px;
+  padding: var(--s-3);
+  border-radius: var(--r-md);
+  background: var(--sky-soft);
+  font-size: var(--fs-lg);
   font-weight: 700;
+  color: var(--ink);
 }
 
+/* Deliberately smaller than --tap-min: an adult-only control, and a big one
+   invites tapping. */
 .gate-cancel {
-  min-height: 56px; /* deliberately smaller than --tap-min: this is an
-                       adult-only control, and a big one invites tapping */
-  padding: 8px 20px;
-  border-radius: 14px;
-  font-size: clamp(15px, 2.6vmin, 20px);
-  opacity: 0.65;
+  min-width: 0;
+  min-height: 52px;
+  padding: var(--s-2) var(--s-5);
+  border-radius: var(--r-md);
+  font-size: var(--fs-sm);
+  color: var(--ink-soft);
+  opacity: 0.7;
 }
 
 /* ---------------------------------------------------------------
@@ -1025,66 +1870,92 @@ body {
    --------------------------------------------------------------- */
 .settings {
   z-index: 110;
-  background: #fffdf7;
+  background: var(--surface);
+  align-items: center;
   justify-content: center;
-  padding: 5vmin;
+  padding: var(--s-5);
 }
 
 .settings-card {
   display: flex;
   flex-direction: column;
-  gap: 3vmin;
+  gap: var(--s-5);
   align-items: center;
   width: min(620px, 92vw);
 }
 
 .settings-card h2 {
-  font-size: clamp(24px, 5vmin, 40px);
+  font-size: var(--fs-xl);
+  font-weight: 700;
 }
 
 .settings-row {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: var(--s-3);
   min-height: var(--tap-min);
-  padding: 12px 28px;
+  padding: var(--s-3) var(--s-6);
   border: none;
-  border-radius: 18px;
-  background: #f0ece1;
+  border-radius: var(--r-lg);
+  background: var(--sky-soft);
   font: inherit;
-  font-size: clamp(18px, 3.4vmin, 28px);
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--ink);
   cursor: pointer;
 }
 
 .settings-note {
-  font-size: clamp(14px, 2.4vmin, 19px);
+  font-size: var(--fs-sm);
   line-height: 1.5;
-  opacity: 0.7;
+  color: var(--ink-soft);
   max-width: 46ch;
+  text-align: center;
 }
 
 .settings-done {
   min-height: var(--tap-min);
-  padding: 12px 36px;
+  padding: var(--s-3) var(--s-7);
   border: none;
-  border-radius: 18px;
-  background: var(--grass);
-  color: #fff;
+  border-radius: var(--r-pill);
+  background: linear-gradient(180deg, #84e4c0 0%, var(--mint) 100%);
+  box-shadow: var(--sh-solid) #35ab82, var(--sh-2);
+  color: var(--on-color);
   font: inherit;
-  font-size: clamp(18px, 3.4vmin, 28px);
+  font-size: var(--fs-md);
   font-weight: 700;
   cursor: pointer;
 }
 
 /* ---------------------------------------------------------------
+   Missing content fallback
+   --------------------------------------------------------------- */
+.missing-screen {
+  align-items: center;
+  justify-content: center;
+  background: var(--sky-soft);
+}
+
+.missing-home {
+  font-size: clamp(48px, 14vmin, 110px);
+}
+
+/* ---------------------------------------------------------------
    Reduced motion — keep every feedback cue, drop the ambient loops.
-   A child who is motion-sensitive still needs to know their tap landed.
+   A child who is motion-sensitive still needs to know her tap landed.
    --------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
+  .bg-cloud,
+  .bg-bubble,
+  .bg-star {
+    animation: none !important;
+  }
+  .bg-bubble {
+    opacity: 0.4;
+  }
   .splash-art,
   .splash-hint,
-  .fc-prompt-swatch,
-  .home-tile {
+  .fc-prompt-swatch {
     animation: none !important;
   }
 }

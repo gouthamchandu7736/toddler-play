@@ -3,10 +3,12 @@ import { AnimatePresence, motion } from "framer-motion";
 
 import useNoGestures from "./hooks/useNoGestures.js";
 import useWakeLock from "./hooks/useWakeLock.js";
+import useStoredList from "./hooks/useStoredList.js";
 import { SCREENS } from "./screens.js";
 
 import Splash from "./components/Splash.jsx";
-import Home from "./components/Home.jsx";
+import HomeScreen from "./screens/HomeScreen.jsx";
+import CategoryScreen from "./screens/CategoryScreen.jsx";
 import Scene from "./components/Scene.jsx";
 import ParentGate from "./components/ParentGate.jsx";
 import Settings from "./components/Settings.jsx";
@@ -17,21 +19,32 @@ import CopyTune from "./games/CopyTune.jsx";
 import LearnLetters from "./games/LearnLetters.jsx";
 import LearnNumbers from "./games/LearnNumbers.jsx";
 import FindIt from "./games/FindIt.jsx";
+import MemoryMatch from "./games/MemoryMatch.jsx";
+import ShadowMatch from "./games/ShadowMatch.jsx";
+import Peekaboo from "./games/Peekaboo.jsx";
+import CatchStars from "./games/CatchStars.jsx";
+import Coloring from "./games/Coloring.jsx";
+import Piano from "./games/Piano.jsx";
+import Rhymes from "./games/Rhymes.jsx";
 
 import SCENES from "./data/scenes.js";
+import { byId } from "./data/catalog.js";
 import { stopSpeech } from "./audio/audioManager.js";
 import "./styles/global.css";
 
 /**
- * `payload` carries which scene ("farm") or which game ("findColor") to show,
- * so adding a theme or mini-game needs no new screen state.
+ * Screen state is one object: `{ screen, payload }`.
+ *
+ * There is still no router. History entries mean a browser back button, and a
+ * back button is a way out of the play area — the one thing the parent gate
+ * exists to prevent.
  */
 const INITIAL_STATE = { screen: SCREENS.SPLASH, payload: null };
 
 /**
- * Registry of playable content, keyed by the payload the Home tiles emit.
- * Adding an activity is one entry here plus one tile in Home.jsx; scenes need
- * neither, only a new array in data/scenes.js.
+ * Registry mapping a catalogue id to its component. Adding an activity is one
+ * entry here plus one entry in data/catalog.js; scenes need neither, only an
+ * array in data/scenes.js.
  */
 const GAMES = {
   letters: LearnLetters,
@@ -40,6 +53,13 @@ const GAMES = {
   findColor: FindColor,
   shapePop: ShapePop,
   copyTune: CopyTune,
+  memoryMatch: MemoryMatch,
+  shadowMatch: ShadowMatch,
+  peekaboo: Peekaboo,
+  catchStars: CatchStars,
+  coloring: Coloring,
+  piano: Piano,
+  rhymes: Rhymes,
 };
 
 export default function App() {
@@ -48,26 +68,40 @@ export default function App() {
 
   const [{ screen, payload }, setState] = useState(INITIAL_STATE);
 
-  // Grown-up flow, kept out of the main screen machine so it can overlay any
-  // screen without disturbing what the child was playing.
+  // Both lists are device-local (see useStoredList) — nothing is transmitted.
+  const favourites = useStoredList("aditi:favourites", { max: 12 });
+  const recents = useStoredList("aditi:recents", { max: 8 });
+
+  // Grown-up flow, kept out of the screen machine so it can overlay anything
+  // without disturbing what the child was playing.
   const [gateOpen, setGateOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const go = useCallback((nextScreen, nextPayload = null) => {
-    // A screen change while the app is mid-sentence would leave it talking
-    // about something no longer on screen.
+    // Changing screen mid-sentence would leave the app talking about something
+    // no longer visible.
     stopSpeech();
     setState({ screen: nextScreen, payload: nextPayload });
   }, []);
 
   const goHome = useCallback(() => go(SCREENS.HOME), [go]);
 
-  const handlePick = useCallback(
-    (tile) => {
-      go(tile.kind === "scene" ? SCREENS.SCENE : SCREENS.GAME, tile.id);
+  const openActivity = useCallback(
+    (activity) => {
+      recents.push(activity.id);
+      go(activity.kind === "scene" ? SCREENS.SCENE : SCREENS.GAME, activity.id);
     },
-    [go],
+    [go, recents],
   );
+
+  /** Where "back" goes from an activity: to its category, not all the way home. */
+  const backFromActivity = useCallback(() => {
+    const activity = byId(payload);
+    if (activity) go(SCREENS.CATEGORY, activity.category);
+    else goHome();
+  }, [payload, go, goHome]);
+
+  const openSettings = useCallback(() => setGateOpen(true), []);
 
   const scene = SCENES[payload];
   const Game = GAMES[payload];
@@ -78,30 +112,52 @@ export default function App() {
         <motion.div
           key={`${screen}:${payload ?? ""}`}
           className="screen-wrap"
-          initial={{ opacity: 0, scale: 0.97 }}
+          initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 1.02 }}
-          transition={{ duration: 0.22, ease: "easeOut" }}
+          exit={{ opacity: 0, scale: 1.01 }}
+          transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
         >
           {screen === SCREENS.SPLASH && <Splash onStart={goHome} />}
 
           {screen === SCREENS.HOME && (
-            <Home onPick={handlePick} onSettings={() => setGateOpen(true)} />
+            <HomeScreen
+              onOpenCategory={(id) => go(SCREENS.CATEGORY, id)}
+              onOpenActivity={openActivity}
+              onSettings={openSettings}
+              favourites={favourites.items}
+              recents={recents.items}
+            />
+          )}
+
+          {screen === SCREENS.CATEGORY && (
+            <CategoryScreen
+              categoryId={payload}
+              onOpenActivity={openActivity}
+              onBack={goHome}
+              onSettings={openSettings}
+              isFavourite={favourites.has}
+              onToggleFavourite={favourites.toggle}
+            />
           )}
 
           {screen === SCREENS.SCENE &&
             (scene ? (
               <Scene
+                title={byId(payload)?.label}
                 characters={scene.characters}
-                background={scene.background}
-                onHome={goHome}
+                onHome={backFromActivity}
+                onSettings={openSettings}
               />
             ) : (
               <Missing onHome={goHome} />
             ))}
 
           {screen === SCREENS.GAME &&
-            (Game ? <Game onHome={goHome} /> : <Missing onHome={goHome} />)}
+            (Game ? (
+              <Game onHome={backFromActivity} onSettings={openSettings} />
+            ) : (
+              <Missing onHome={goHome} />
+            ))}
         </motion.div>
       </AnimatePresence>
 
@@ -121,12 +177,12 @@ export default function App() {
 }
 
 /**
- * Shown if a payload ever names content that doesn't exist. A child should
- * never meet a blank screen with no way back.
+ * Shown if a payload ever names content that doesn't exist. A child must never
+ * meet a blank screen with no way back.
  */
 function Missing({ onHome }) {
   return (
-    <div className="screen">
+    <div className="screen missing-screen">
       <button
         type="button"
         className="tappable missing-home"
