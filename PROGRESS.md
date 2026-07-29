@@ -97,11 +97,30 @@ including all four at once). Wrong tap replays the same sequence — never a
 still lights and sounds the pad; it just doesn't count.
 
 **PWA** — `vite.config.js` + `main.jsx`
+Named **"Aditi's Playhouse"**, `short_name` **"Aditi"** (what shows under the
+home screen icon; iOS and Android both truncate around 12 characters).
 `display: fullscreen` with `display_override` fallback chain, `orientation:
-portrait`, icons 192/512/maskable-512 + apple-touch (generated, cow on a warm
-yellow radial). Service worker precaches all 16 build outputs and auto-updates
-with no reload prompt (meaningless to this audience, and must never cover the
-play area).
+portrait`. Service worker precaches all 16 build outputs and auto-updates with
+no reload prompt (meaningless to this audience, and must never cover the play
+area).
+
+**Icons** — built from the supplied artwork at `/home/acer/Project/1000864942.png`
+(1254x1254). Two things had to be handled:
+- The source is **RGB with no alpha**, so the area outside the rounded frame is
+  *solid black*, not transparent — shipped as-is a home screen would show a
+  black tile. The surround is flood-filled from the image border rather than
+  assuming a corner radius, so it follows the real frame shape exactly.
+- The **maskable** variant must be opaque and full-bleed (Android crops it to a
+  circle of 80% diameter). The art is inset to 80% and the gap filled with
+  `#f6d216`, sampled from the icon's own yellow frame — so the crop never cuts
+  into her face and there is no seam.
+
+`theme_color` / `background_color` are that same `#f6d216`, which makes the PWA
+launch splash (background + centred 512 icon) seamless.
+
+All icons are palette-quantised to 256 colours: 464 KB → 73 KB for the 512,
+and the total precache dropped from 1277 KB back to 518 KB with no visible
+quality loss. Worth it on the cheap phone this targets.
 
 ---
 
@@ -119,6 +138,8 @@ Driven with headless Chrome at 390×844 and 844×390:
   does not leak Settings; a correct answer opens it.
 - Offline: after one online load, `setOfflineMode(true)` + reload still boots the
   splash, reaches the Farm, and animates a tap. 10 cache entries.
+- All five icons fetch 200, decode, and report their declared dimensions;
+  `document.title` is "Aditi's Playhouse", apple web-app title is "Aditi".
 - Portrait and landscape both fit with no page scroll.
 
 ---

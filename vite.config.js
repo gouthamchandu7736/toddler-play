@@ -7,13 +7,15 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.svg", "icons/apple-touch-icon.png"],
+      includeAssets: ["icons/apple-touch-icon.png", "icons/favicon-64.png"],
 
       manifest: {
-        name: "Toddler Play",
-        short_name: "Play",
+        name: "Aditi's Playhouse",
+        // short_name is what sits under the icon on the home screen, where
+        // both iOS and Android truncate at roughly 12 characters.
+        short_name: "Aditi",
         description:
-          "A gentle offline tap-and-play app for toddlers. No ads, no links, no data collection.",
+          "A gentle offline tap-and-play app for Aditi. No ads, no links, no data collection.",
         start_url: "/",
         scope: "/",
 
@@ -29,8 +31,10 @@ export default defineConfig({
         // (Landscape still works if you'd rather set this to "any" for a tablet.)
         orientation: "portrait",
 
-        theme_color: "#ffd166",
-        background_color: "#ffd166",
+        // Sampled from the icon's own yellow frame, so the launch splash
+        // (background_color + the 512 icon) has no visible seam around it.
+        theme_color: "#f6d216",
+        background_color: "#f6d216",
         lang: "en",
         categories: ["education", "kids", "games"],
 
