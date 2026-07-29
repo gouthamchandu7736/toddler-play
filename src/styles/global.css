@@ -1,10 +1,15 @@
 /* ---------------------------------------------------------------
    Toddler Play — global styles
+
    Rules this file enforces (PLAN.md Section 2):
    - no text selection, no long-press callout, no tap highlight
    - no overscroll bounce / pull-to-refresh
    - no double-tap zoom (touch-action)
    - full-viewport, non-scrolling root
+   - every interactive element at least --tap-min on both axes
+
+   Sizing is in vmin throughout, so a layout that fits one phone fits them
+   all, in either orientation, without media queries or JS measurement.
    --------------------------------------------------------------- */
 
 /* --- reset --- */
@@ -26,7 +31,6 @@ body,
 }
 
 html {
-  /* dvh-aware full height on mobile browsers with dynamic toolbars */
   height: 100dvh;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
@@ -36,8 +40,8 @@ body {
   height: 100dvh;
   position: fixed; /* belt-and-braces against iOS scroll chaining */
   inset: 0;
-  font-family: "Baloo 2", "Comic Sans MS", "Trebuchet MS", system-ui, -apple-system,
-    "Segoe UI", sans-serif;
+  font-family: "Baloo 2", "Comic Sans MS", "Trebuchet MS", system-ui,
+    -apple-system, "Segoe UI", sans-serif;
   font-size: clamp(20px, 4vw, 32px);
   line-height: 1.25;
   color: var(--ink);
@@ -65,6 +69,11 @@ body {
 
   --tap-min: 88px; /* PLAN.md Section 2 rule 1: minimum touch target */
 
+  /* Space a play grid must leave clear so the floating corner buttons never
+     sit on top of something tappable. A tile hidden under the Home button is
+     a dead tap, and a tile that triggers Home instead of playing is worse. */
+  --corner-gutter: calc(var(--tap-min) + 26px);
+
   color-scheme: light;
 }
 
@@ -74,12 +83,15 @@ body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  /* respect notches/home indicator so nothing tappable hides under them */
-  padding: env(safe-area-inset-top) env(safe-area-inset-right)
-    env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
-/* Every screen fills the shell. */
+.screen-wrap {
+  position: absolute;
+  inset: 0;
+}
+
+/* Every screen fills the shell. Safe-area padding lives here rather than on
+   the root so full-bleed backgrounds still reach the edges. */
 .screen {
   position: absolute;
   inset: 0;
@@ -89,9 +101,10 @@ body {
   justify-content: center;
   gap: 2vh;
   text-align: center;
+  overflow: hidden;
 }
 
-/* --- base tappable: never smaller than the minimum target --- */
+/* --- base tappable --- */
 .tappable {
   min-width: var(--tap-min);
   min-height: var(--tap-min);
@@ -105,7 +118,6 @@ body {
   touch-action: manipulation;
 }
 
-/* Toddlers hold fingers down; don't leave things looking stuck. */
 .tappable:focus {
   outline: none;
 }
@@ -114,44 +126,540 @@ body {
   outline-offset: 4px;
 }
 
-/* Respect users who ask for less motion, without removing feedback entirely. */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+/* ---------------------------------------------------------------
+   Sparkles — decorative burst, must never intercept a tap
+   --------------------------------------------------------------- */
+.sparkles {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.sparkle {
+  position: absolute;
+  font-size: clamp(18px, 4vmin, 34px);
+  line-height: 1;
+  will-change: transform, opacity;
+}
+
+/* ---------------------------------------------------------------
+   Splash
+   --------------------------------------------------------------- */
+.splash {
+  width: 100%;
+  height: 100%;
+  border: none;
+  cursor: pointer;
+  background: radial-gradient(circle at 50% 35%, #fff6d8 0%, var(--sun) 65%, #f6b93b 100%);
+  gap: 1vh;
+}
+
+.splash-art {
+  font-size: clamp(90px, 34vmin, 300px);
+  line-height: 1;
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.18));
+}
+
+.splash-hint {
+  font-size: clamp(40px, 12vmin, 100px);
+  line-height: 1;
+}
+
+.splash-text {
+  font-size: clamp(22px, 5vmin, 44px);
+  font-weight: 700;
+  color: #7a4b12;
+}
+
+/* ---------------------------------------------------------------
+   Home
+   --------------------------------------------------------------- */
+.home {
+  background: linear-gradient(160deg, #cdeafe 0%, #e8f7d4 55%, #fdf6e3 100%);
+  padding: max(3vmin, env(safe-area-inset-top)) max(3vmin, env(safe-area-inset-right))
+    max(3vmin, env(safe-area-inset-bottom)) max(3vmin, env(safe-area-inset-left));
+}
+
+.home-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: clamp(12px, 3vmin, 30px);
+  width: 100%;
+  height: 100%;
+  max-width: 900px;
+  max-height: 900px;
+  /* Reserve the top strip for the settings gear rather than letting it float
+     over a play tile — a mis-tap there interrupts play with a gate. */
+  padding-top: var(--corner-gutter);
+}
+
+.home-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5vmin;
+  border-radius: clamp(20px, 5vmin, 44px);
+  background: var(--tile-color);
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.14), 0 12px 26px rgba(0, 0, 0, 0.12);
+  will-change: transform;
+  container-type: size;
+}
+
+/* Emoji are sized against their own TILE, not the viewport. A vmin-based size
+   looks right in portrait and shrinks to a dot in landscape (and vice versa);
+   cqmin tracks whatever the tile actually is. The clamp() above the @supports
+   is the fallback for engines without container queries. */
+.home-tile-emoji {
+  font-size: clamp(48px, 16vmin, 130px);
+  line-height: 1;
+}
+
+.home-tile-label {
+  font-size: clamp(16px, 3.4vmin, 30px);
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+@supports (container-type: size) {
+  .home-tile-emoji {
+    font-size: min(48cqmin, 34cqmax);
+  }
+  .home-tile-label {
+    font-size: min(14cqmin, 11cqmax);
   }
 }
 
-/* Dev-only placeholder styling for Phase 0 stub screens. */
-.placeholder {
+/* Corner controls. Small on screen but still a full-size touch target —
+   the visual is inset, the hit area is not. */
+.settings-button,
+.home-button,
+.fc-repeat,
+.ct-replay {
+  position: absolute;
+  z-index: 20;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  font-size: clamp(24px, 5vmin, 40px);
+  width: var(--tap-min);
+  height: var(--tap-min);
+}
+
+.settings-button {
+  top: max(10px, env(safe-area-inset-top));
+  right: max(10px, env(safe-area-inset-right));
+  opacity: 0.45; /* visually recessive; it is not for the child */
+}
+
+.home-button {
+  bottom: max(10px, env(safe-area-inset-bottom));
+  left: max(10px, env(safe-area-inset-left));
+}
+
+.fc-repeat,
+.ct-replay {
+  bottom: max(10px, env(safe-area-inset-bottom));
+  right: max(10px, env(safe-area-inset-right));
+  position: absolute;
+}
+
+.missing-home {
+  font-size: clamp(48px, 14vmin, 110px);
+}
+
+/* ---------------------------------------------------------------
+   Scene (Farm)
+   --------------------------------------------------------------- */
+.scene {
+  background: linear-gradient(#bde3ff 0%, #bde3ff 45%, #a7d489 45%, #7cc576 100%);
+}
+
+/* Fixed 2x3 / 3x2 rather than auto-fit: the tile count must not change with
+   the viewport, because this app never scrolls. Six always fits. */
+.scene-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: clamp(10px, 2.5vmin, 26px);
+  width: 100%;
+  height: 100%;
+  padding: max(2vmin, env(safe-area-inset-top)) max(2vmin, env(safe-area-inset-right))
+    calc(var(--corner-gutter) + env(safe-area-inset-bottom))
+    max(2vmin, env(safe-area-inset-left));
+}
+
+/* Landscape has height to spare nowhere and width to spare everywhere, so the
+   corner clearance moves to the sides instead of the bottom. */
+@media (orientation: landscape) {
+  .scene-grid {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    padding-bottom: max(2vmin, env(safe-area-inset-bottom));
+    padding-left: calc(var(--corner-gutter) + env(safe-area-inset-left));
+    padding-right: calc(var(--corner-gutter) + env(safe-area-inset-right));
+  }
+}
+
+.character {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: clamp(18px, 4vmin, 36px);
+  background: var(--tile-color);
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.12), 0 10px 22px rgba(0, 0, 0, 0.1);
+  will-change: transform;
+  container-type: size;
+}
+
+.character-emoji {
+  font-size: clamp(44px, 15vmin, 120px);
+  line-height: 1;
+  pointer-events: none; /* taps always land on the button, never the glyph */
+}
+
+@supports (container-type: size) {
+  .character-emoji {
+    font-size: min(62cqmin, 44cqmax);
+  }
+}
+
+/* ---------------------------------------------------------------
+   Find the Color
+   --------------------------------------------------------------- */
+.find-color {
+  background: linear-gradient(160deg, #fdf6e3 0%, #ffe8d6 100%);
+  justify-content: flex-start;
+  padding: max(3vmin, env(safe-area-inset-top)) 3vmin
+    max(3vmin, env(safe-area-inset-bottom));
+  gap: 2vmin;
+}
+
+.fc-prompt {
+  display: grid;
+  place-items: center;
+  padding-top: 1vmin;
+  flex: 0 0 auto;
+}
+
+.fc-prompt-swatch {
+  width: clamp(70px, 18vmin, 150px);
+  height: clamp(70px, 18vmin, 150px);
+  border-radius: 50%;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.15), 0 10px 24px rgba(0, 0, 0, 0.16);
+  will-change: transform;
+}
+
+.fc-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: clamp(12px, 3vmin, 30px);
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 2vmin 2vmin var(--corner-gutter);
+}
+
+@media (orientation: landscape) {
+  .fc-grid {
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: 1fr;
+    padding: 1vmin var(--corner-gutter);
+  }
+}
+
+.fc-tile {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: clamp(18px, 4vmin, 36px);
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.14), 0 10px 22px rgba(0, 0, 0, 0.12);
+  will-change: transform;
+}
+
+.fc-tile.is-won {
+  box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.9),
+    0 0 44px 14px rgba(255, 255, 255, 0.75);
+  z-index: 4;
+}
+
+/* ---------------------------------------------------------------
+   Shape Pop
+   --------------------------------------------------------------- */
+.shape-pop {
+  background: linear-gradient(180deg, #0f3f6b 0%, #1f6fa8 55%, #48b0d8 100%);
+}
+
+.bubble {
+  position: absolute;
+  border: none;
+  padding: 0;
+  box-shadow: inset 0 -10px 22px rgba(0, 0, 0, 0.18),
+    inset 0 10px 18px rgba(255, 255, 255, 0.35), 0 6px 20px rgba(0, 0, 0, 0.2);
+  will-change: transform;
+}
+
+.bubble-circle {
+  border-radius: 50%;
+}
+.bubble-square {
+  border-radius: 14%;
+}
+.bubble-triangle {
+  clip-path: polygon(50% 4%, 96% 94%, 4% 94%);
+  border-radius: 0;
+  box-shadow: none;
+}
+.bubble-star {
+  clip-path: polygon(
+    50% 2%,
+    61% 36%,
+    98% 36%,
+    68% 58%,
+    79% 92%,
+    50% 71%,
+    21% 92%,
+    32% 58%,
+    2% 36%,
+    39% 36%
+  );
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* ---------------------------------------------------------------
+   Copy the Tune
+   --------------------------------------------------------------- */
+.copy-tune {
+  background: linear-gradient(160deg, #2b2d42 0%, #4a4e69 100%);
+  justify-content: center;
+  padding: max(3vmin, env(safe-area-inset-top)) 3vmin
+    max(3vmin, env(safe-area-inset-bottom));
+  gap: 2vmin;
+}
+
+.ct-status {
+  font-size: clamp(34px, 9vmin, 78px);
+  line-height: 1;
+  flex: 0 0 auto;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.35));
+}
+
+.ct-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: clamp(12px, 3vmin, 30px);
+  width: min(100%, 62vh);
+  aspect-ratio: 1;
+  max-height: 62vh;
+  padding: 1vmin;
+}
+
+.ct-pad {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: clamp(20px, 5vmin, 44px);
+  background: var(--pad-color);
+  opacity: 0.62;
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.25);
+  transition: opacity 120ms ease-out, box-shadow 120ms ease-out;
+  will-change: transform, opacity;
+}
+
+.ct-pad.is-lit {
+  opacity: 1;
+  box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.85),
+    0 0 50px 16px rgba(255, 255, 255, 0.5);
+  z-index: 3;
+}
+
+.ct-pad-emoji {
+  font-size: clamp(40px, 13vmin, 110px);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.ct-celebration {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------------
+   Parent gate — the only screen a child is meant to fail
+   --------------------------------------------------------------- */
+.gate-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background: rgba(20, 16, 14, 0.78);
+  backdrop-filter: blur(3px);
+  padding: 4vmin;
+}
+
+.gate-card {
   display: flex;
   flex-direction: column;
-  gap: 3vh;
   align-items: center;
+  gap: 2.4vmin;
+  width: min(560px, 92vw);
+  max-height: 92vh;
+  padding: clamp(18px, 4vmin, 36px);
+  border-radius: clamp(18px, 4vmin, 32px);
+  background: #fffdf7;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
 }
 
-.placeholder h1 {
-  font-size: clamp(32px, 8vw, 72px);
+.gate-title {
+  font-size: clamp(15px, 2.6vmin, 22px);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.5;
 }
 
-.placeholder .stub-nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 24px;
+.gate-instructions {
+  font-size: clamp(19px, 3.6vmin, 30px);
+  font-weight: 700;
+}
+
+.gate-hold {
+  position: relative;
+  width: clamp(130px, 30vmin, 190px);
+  height: clamp(130px, 30vmin, 190px);
+}
+
+.gate-ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg); /* start the fill at 12 o'clock */
+}
+
+.gate-ring-track,
+.gate-ring-fill {
+  fill: none;
+  stroke-width: 12;
+  stroke-linecap: round;
+}
+
+.gate-ring-track {
+  stroke: rgba(0, 0, 0, 0.09);
+}
+
+.gate-ring-fill {
+  stroke: var(--barn);
+  /* No CSS transition: the offset is already driven frame-by-frame from rAF,
+     and a transition on top would lag behind the finger. */
+}
+
+.gate-hold-icon {
+  font-size: clamp(38px, 9vmin, 62px);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.gate-choices {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(8px, 2vmin, 16px);
+  width: 100%;
+}
+
+.gate-choice {
+  padding: clamp(10px, 2.4vmin, 20px);
+  border-radius: 16px;
+  background: #f0ece1;
+  font-size: clamp(24px, 5vmin, 40px);
+  font-weight: 700;
+}
+
+.gate-cancel {
+  min-height: 56px; /* deliberately smaller than --tap-min: this is an
+                       adult-only control, and a big one invites tapping */
+  padding: 8px 20px;
+  border-radius: 14px;
+  font-size: clamp(15px, 2.6vmin, 20px);
+  opacity: 0.65;
+}
+
+/* ---------------------------------------------------------------
+   Settings
+   --------------------------------------------------------------- */
+.settings {
+  z-index: 110;
+  background: #fffdf7;
   justify-content: center;
+  padding: 5vmin;
 }
 
-.placeholder .stub-nav button {
-  min-width: var(--tap-min);
+.settings-card {
+  display: flex;
+  flex-direction: column;
+  gap: 3vmin;
+  align-items: center;
+  width: min(620px, 92vw);
+}
+
+.settings-card h2 {
+  font-size: clamp(24px, 5vmin, 40px);
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
   min-height: var(--tap-min);
-  padding: 0 28px;
+  padding: 12px 28px;
   border: none;
-  border-radius: 24px;
+  border-radius: 18px;
+  background: #f0ece1;
+  font: inherit;
+  font-size: clamp(18px, 3.4vmin, 28px);
+  cursor: pointer;
+}
+
+.settings-note {
+  font-size: clamp(14px, 2.4vmin, 19px);
+  line-height: 1.5;
+  opacity: 0.7;
+  max-width: 46ch;
+}
+
+.settings-done {
+  min-height: var(--tap-min);
+  padding: 12px 36px;
+  border: none;
+  border-radius: 18px;
   background: var(--grass);
   color: #fff;
   font: inherit;
-  font-size: clamp(18px, 3vw, 28px);
+  font-size: clamp(18px, 3.4vmin, 28px);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ---------------------------------------------------------------
+   Reduced motion — keep every feedback cue, drop the ambient loops.
+   A child who is motion-sensitive still needs to know their tap landed.
+   --------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .splash-art,
+  .splash-hint,
+  .fc-prompt-swatch,
+  .home-tile {
+    animation: none !important;
+  }
 }

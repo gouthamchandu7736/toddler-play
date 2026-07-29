@@ -1,66 +1,135 @@
 import { useCallback, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+
 import useNoGestures from "./hooks/useNoGestures.js";
+import useWakeLock from "./hooks/useWakeLock.js";
 import { SCREENS } from "./screens.js";
+
+import Splash from "./components/Splash.jsx";
+import Home from "./components/Home.jsx";
+import Scene from "./components/Scene.jsx";
+import ParentGate from "./components/ParentGate.jsx";
+import Settings from "./components/Settings.jsx";
+
+import FindColor from "./games/FindColor.jsx";
+import ShapePop from "./games/ShapePop.jsx";
+import CopyTune from "./games/CopyTune.jsx";
+
+import FARM from "./data/farm.js";
+import { stopSpeech } from "./audio/audioManager.js";
 import "./styles/global.css";
 
 /**
  * `payload` carries which scene ("farm") or which game ("findColor") to show,
- * so adding a theme or mini-game later needs no new screen state.
+ * so adding a theme or mini-game needs no new screen state.
  */
 const INITIAL_STATE = { screen: SCREENS.SPLASH, payload: null };
 
+/** Registry of playable content, keyed by the payload the Home tiles emit. */
+const GAMES = {
+  findColor: FindColor,
+  shapePop: ShapePop,
+  copyTune: CopyTune,
+};
+
+const SCENES = {
+  farm: { characters: FARM, background: "linear-gradient(#bde3ff 0%, #bde3ff 45%, #a7d489 45%, #7cc576 100%)" },
+};
+
 export default function App() {
   useNoGestures();
+  useWakeLock(true);
 
   const [{ screen, payload }, setState] = useState(INITIAL_STATE);
 
+  // Grown-up flow, kept out of the main screen machine so it can overlay any
+  // screen without disturbing what the child was playing.
+  const [gateOpen, setGateOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
   const go = useCallback((nextScreen, nextPayload = null) => {
+    // A screen change while the app is mid-sentence would leave it talking
+    // about something no longer on screen.
+    stopSpeech();
     setState({ screen: nextScreen, payload: nextPayload });
   }, []);
 
   const goHome = useCallback(() => go(SCREENS.HOME), [go]);
 
+  const handlePick = useCallback(
+    (tile) => {
+      go(tile.kind === "scene" ? SCREENS.SCENE : SCREENS.GAME, tile.id);
+    },
+    [go],
+  );
+
+  const scene = SCENES[payload];
+  const Game = GAMES[payload];
+
   return (
     <div className="app-root">
-      {/* Phase 0: placeholder screens. Later phases replace each branch
-          with the real component (Splash, Home, Scene, games/*). */}
-      {screen === SCREENS.SPLASH && (
-        <Placeholder title="👋 Splash">
-          <button onClick={goHome}>Tap to start →</button>
-        </Placeholder>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={`${screen}:${payload ?? ""}`}
+          className="screen-wrap"
+          initial={{ opacity: 0, scale: 0.97 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 1.02 }}
+          transition={{ duration: 0.22, ease: "easeOut" }}
+        >
+          {screen === SCREENS.SPLASH && <Splash onStart={goHome} />}
+
+          {screen === SCREENS.HOME && (
+            <Home onPick={handlePick} onSettings={() => setGateOpen(true)} />
+          )}
+
+          {screen === SCREENS.SCENE &&
+            (scene ? (
+              <Scene
+                characters={scene.characters}
+                background={scene.background}
+                onHome={goHome}
+              />
+            ) : (
+              <Missing onHome={goHome} />
+            ))}
+
+          {screen === SCREENS.GAME &&
+            (Game ? <Game onHome={goHome} /> : <Missing onHome={goHome} />)}
+        </motion.div>
+      </AnimatePresence>
+
+      {gateOpen && (
+        <ParentGate
+          onUnlocked={() => {
+            setGateOpen(false);
+            setSettingsOpen(true);
+          }}
+          onDismiss={() => setGateOpen(false)}
+        />
       )}
 
-      {screen === SCREENS.HOME && (
-        <Placeholder title="🏠 Home">
-          <button onClick={() => go(SCREENS.SCENE, "farm")}>🐄 Farm</button>
-          <button onClick={() => go(SCREENS.GAME, "findColor")}>🎨 Find Color</button>
-          <button onClick={() => go(SCREENS.GAME, "shapePop")}>⭐ Shape Pop</button>
-          <button onClick={() => go(SCREENS.GAME, "copyTune")}>🎵 Copy Tune</button>
-        </Placeholder>
-      )}
-
-      {screen === SCREENS.SCENE && (
-        <Placeholder title={`🌾 Scene: ${payload}`}>
-          <button onClick={goHome}>← Home</button>
-        </Placeholder>
-      )}
-
-      {screen === SCREENS.GAME && (
-        <Placeholder title={`🎮 Game: ${payload}`}>
-          <button onClick={goHome}>← Home</button>
-        </Placeholder>
-      )}
+      {settingsOpen && <Settings onClose={() => setSettingsOpen(false)} />}
     </div>
   );
 }
 
-function Placeholder({ title, children }) {
+/**
+ * Shown if a payload ever names content that doesn't exist. A child should
+ * never meet a blank screen with no way back.
+ */
+function Missing({ onHome }) {
   return (
     <div className="screen">
-      <div className="placeholder">
-        <h1>{title}</h1>
-        <div className="stub-nav">{children}</div>
-      </div>
+      <button
+        type="button"
+        className="tappable missing-home"
+        onPointerDown={onHome}
+        onClick={(e) => e.preventDefault()}
+        aria-label="Home"
+      >
+        🏠
+      </button>
     </div>
   );
 }
