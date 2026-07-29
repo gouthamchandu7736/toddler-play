@@ -400,3 +400,82 @@ match, card flip as a separate game, bedtime stories, interactive storybook.
 Freehand drawing is blocked by the gesture lockdown (see Colouring). The rest
 is scope, not difficulty — say which matter and they are straightforward
 additions on this engine.
+
+---
+
+## Six more activities + icon sizing pass (2026-07-30)
+
+**26 activities, 6 categories.** Music split out of Create so no category
+exceeds six — six is the cap that keeps a category grid on one non-scrolling
+screen at every size.
+
+### New
+
+- **Tracing** — letters by tapping dots in order. Real tracing means dragging,
+  and `touchmove` is cancelled app-wide. Tapping dots teaches the part that
+  actually matters at three: **stroke order and direction**, which children get
+  wrong for years. Staying on the line is motor control that comes later.
+  Data is stroke polylines with dots generated at runtime, so 12 letters cost
+  almost nothing.
+- **Opposites** — big/small, hot/cold. Every pair is *drawable*; "kind/unkind"
+  is a real opposite but not a picture.
+- **Patterns** — ABAB and AABB only. ABC repeats need more working memory than
+  a 3-year-old has, and a pattern she cannot see is just a guess.
+- **Shape sort** — tap-tap, not drag. Removes the motor difficulty and leaves
+  the actual skill (matching form to form) untouched. The hole is the same
+  silhouette as the piece, from one shared CSS class set, so they cannot drift.
+- **Drums** — eight synthesised pads (filtered noise bursts + pitched sweeps
+  added to audioManager). Percussion is the one instrument where a toddler's
+  instinct — hit it hard and often — is correct technique.
+- **Stickers** — pick, then tap to place. Positions stored as percentages so
+  they survive rotation.
+
+### Icon sizing
+
+Icons shipped at a fixed 24px regardless of their button, which looked lost in
+a 68px round button. They now scale with the button (~45% of it): 22/28/38 for
+sm/md/lg, 30 in the top bar, 26 for the favourite star.
+
+### Bugs found and fixed in this pass
+
+- **Tracing hit circles overlapped.** Every dot had r=17; adjacent dots are 42
+  apart, so neighbours overlapped and — since a later sibling paints on top — a
+  tap aimed at the active dot could land on the *next* one and do nothing. Now
+  only the active dot gets a large radius (30 vs 12): no overlap, and the
+  biggest target sits exactly where she is being asked to tap.
+- **Tracing canvas collapsed**, then became a tall empty box. `height:100%`
+  against an auto-height card fell back to the SVG's intrinsic size; forcing
+  the card to full height instead just padded it with whitespace. Fixed by
+  driving the canvas from a definite WIDTH plus an explicit `aspect-ratio`.
+  Also slimmed this deck's arrows and card padding — the canvas is
+  width-constrained, so horizontal chrome comes straight out of the dot size.
+  Active dot went 24px → 55px at 320, and 76px at 390.
+- **Rhyme lines were 34px tall** and are tappable (each re-reads its line).
+  Given a 48px floor.
+
+### Verified — full sweep, all passing
+
+At **390x844, 844x390, 320x568 and 1280x800**:
+
+- 26/26 activities open, render and return home; all six categories navigate;
+  card counts per category correct.
+- **Nothing scrolls** in either axis, on any screen, at any size.
+- **Zero console errors, zero page errors, zero external network requests.**
+- Behaviour checks, not just rendering:
+  - Tracing: an out-of-order dot tap is ignored; in-order taps advance and draw
+    the segment.
+  - Patterns: the correct choice is always present, and filling the slot works.
+  - Shape sort: a wrong hole does not advance the round; the right one wins.
+  - Opposites: three unique choices, prompt drawn from either end of the pair.
+  - Drums: all 8 pads strike without error.
+  - Stickers: 3 placed, clear removes exactly those.
+  - Match: 6 cards, all face down at start.
+  - Parent gate: a 1.1s hold still does not advance past stage 1.
+- Smallest targets: 68px chrome, 61px colour swatch, 56px sticker, 55px active
+  tracing dot (320px screen; 76px on a normal phone), 48px rhyme line.
+
+### Still not built from the original brief
+
+Jigsaw, fishing, bedtime stories / interactive storybook, picture match as a
+separate game, alphabet tracing with freehand strokes (blocked by the gesture
+lockdown — see Tracing). All are scope rather than difficulty.

@@ -26,6 +26,12 @@ import CatchStars from "./games/CatchStars.jsx";
 import Coloring from "./games/Coloring.jsx";
 import Piano from "./games/Piano.jsx";
 import Rhymes from "./games/Rhymes.jsx";
+import Tracing from "./games/Tracing.jsx";
+import Opposites from "./games/Opposites.jsx";
+import Patterns from "./games/Patterns.jsx";
+import ShapeSort from "./games/ShapeSort.jsx";
+import Drums from "./games/Drums.jsx";
+import Stickers from "./games/Stickers.jsx";
 
 import SCENES from "./data/scenes.js";
 import { byId } from "./data/catalog.js";
@@ -60,6 +66,12 @@ const GAMES = {
   coloring: Coloring,
   piano: Piano,
   rhymes: Rhymes,
+  tracing: Tracing,
+  opposites: Opposites,
+  patterns: Patterns,
+  shapeSort: ShapeSort,
+  drums: Drums,
+  stickers: Stickers,
 };
 
 export default function App() {

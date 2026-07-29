@@ -177,6 +177,26 @@ body {
   border-radius: 50%;
 }
 
+/* Icons scale WITH their button. The SVG ships at 24px, which looked lost
+   inside a 68px round button and cramped inside a 56px one — an icon should
+   read at roughly 45% of its button, not a fixed size regardless of it. */
+.btn-icon {
+  width: 28px;
+  height: 28px;
+}
+.btn-sm .btn-icon {
+  width: 22px;
+  height: 22px;
+}
+.btn-lg .btn-icon {
+  width: 38px;
+  height: 38px;
+}
+.topbar .btn-icon {
+  width: 30px;
+  height: 30px;
+}
+
 .btn-sky {
   --btn-base: var(--sky);
   --btn-lite: #7ecffb;
@@ -718,6 +738,11 @@ body {
   color: var(--on-color);
   box-shadow: var(--sh-1);
   pointer-events: none;
+}
+
+.card-fav .icon {
+  width: 26px;
+  height: 26px;
 }
 
 .card-fav {
@@ -1732,8 +1757,13 @@ body {
   min-height: 0;
 }
 
+/* 48px floor: each line is tappable (it re-reads that line), and at its natural
+   text height it came out 34px — too shallow to hit reliably. */
 .rh-line {
-  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
   min-width: 0;
   width: 100%;
   padding: var(--s-2) var(--s-3);
@@ -1755,6 +1785,496 @@ body {
   font-weight: 700;
   transform: scale(1.03);
   box-shadow: var(--sh-2);
+}
+
+/* ---------------------------------------------------------------
+   Tracing
+   --------------------------------------------------------------- */
+/* Slimmer arrows and tighter card padding than the other flashcard decks:
+   the tracing canvas is WIDTH-constrained, and every pixel of horizontal
+   chrome comes straight out of the dot targets. 12 letters is also a short
+   deck to page through, so the arrows matter less here. */
+.tracing {
+  --deck-arrow-w: clamp(44px, 10vmin, 76px);
+}
+
+.tracing .deck-stage {
+  padding-left: calc(var(--deck-arrow-w) + var(--s-1));
+  padding-right: calc(var(--deck-arrow-w) + var(--s-1));
+}
+
+.tr-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-2);
+  width: 100%;
+  height: auto;
+  max-width: 460px;
+  max-height: 100%;
+  padding: var(--s-2);
+  border-radius: var(--r-xl);
+  background: var(--surface);
+  box-shadow: var(--sh-solid-lg) rgba(63, 51, 85, 0.14), var(--sh-3);
+}
+
+.tr-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  width: 100%;
+  flex: none;
+  padding: 0 var(--s-2);
+}
+
+.tr-letter {
+  display: flex;
+  align-items: baseline;
+  gap: 0.1em;
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.tr-lower {
+  font-size: 0.66em;
+  opacity: 0.55;
+}
+
+.tr-word {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.tr-emoji {
+  font-size: 1.7em;
+  line-height: 1;
+}
+
+/* Width-driven with an explicit aspect-ratio, rather than height:100%.
+   height:100% against an auto-height card collapsed the SVG to its intrinsic
+   size; forcing the card to full height instead just made it a tall empty
+   box. Deriving height from a definite width fixes both. */
+.tr-canvas {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 200 / 206;
+  max-height: 100%;
+  flex: 0 1 auto;
+  min-height: 0;
+  touch-action: manipulation;
+}
+
+/* The finished letter, faint, so she can see where the dots are heading. */
+.tr-ghost {
+  fill: none;
+  stroke: rgba(63, 51, 85, 0.1);
+  stroke-width: 18;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.tr-drawn {
+  stroke: var(--mint);
+  stroke-width: 15;
+  stroke-linecap: round;
+}
+
+/* Invisible, generous hit circle — the visible dot stays small for accuracy
+   while the target stays large for a toddler's finger. */
+.tr-hit {
+  fill: transparent;
+  cursor: pointer;
+}
+
+.tr-dot {
+  fill: var(--surface);
+  stroke: rgba(63, 51, 85, 0.3);
+  stroke-width: 2.5;
+  pointer-events: none;
+  transition: fill var(--t-fast) var(--ease-out);
+}
+
+.tr-dot.is-done {
+  fill: var(--mint);
+  stroke: var(--mint);
+}
+
+.tr-dot.is-next {
+  fill: var(--coral);
+  stroke: var(--coral);
+}
+
+.tr-pulse {
+  fill: none;
+  stroke: var(--coral);
+  stroke-width: 3;
+  pointer-events: none;
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: trPulse 1.5s ease-out infinite;
+}
+
+@keyframes trPulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+/* ---------------------------------------------------------------
+   Patterns
+   --------------------------------------------------------------- */
+.pt-sequence {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  flex: none;
+  padding: var(--s-3);
+  border-radius: var(--r-xl);
+  background: var(--surface-veil-strong);
+  box-shadow: var(--sh-2);
+}
+
+.pt-cell {
+  display: grid;
+  place-items: center;
+  width: clamp(48px, 13vmin, 88px);
+  height: clamp(48px, 13vmin, 88px);
+  font-size: clamp(26px, 7.5vmin, 52px);
+  line-height: 1;
+  border-radius: var(--r-md);
+  background: var(--sky-soft);
+}
+
+.pt-slot {
+  position: relative;
+  background: var(--sun-soft);
+  border: 3px dashed var(--sun);
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.pt-slot.is-filled {
+  border-style: solid;
+  background: var(--mint-soft);
+  border-color: var(--mint);
+}
+
+.pt-ask {
+  flex: none;
+  width: clamp(66px, 14vmin, 100px);
+  height: clamp(66px, 14vmin, 100px);
+  border-radius: 50%;
+  background: var(--surface-veil-strong);
+  box-shadow: var(--sh-solid) rgba(63, 51, 85, 0.12), var(--sh-2);
+  font-size: clamp(28px, 6.5vmin, 46px);
+}
+
+.pt-choices {
+  display: flex;
+  justify-content: center;
+  gap: var(--s-3);
+  flex: none;
+  width: 100%;
+}
+
+.pt-choice {
+  width: clamp(88px, 22vmin, 140px);
+  height: clamp(88px, 22vmin, 140px);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--sh-solid) rgba(63, 51, 85, 0.14), var(--sh-2);
+  font-size: clamp(38px, 11vmin, 72px);
+  line-height: 1;
+}
+
+/* ---------------------------------------------------------------
+   Shape sort
+   --------------------------------------------------------------- */
+.ss-holder {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: clamp(96px, 24vmin, 170px);
+  height: clamp(96px, 24vmin, 170px);
+  border-radius: var(--r-xl);
+  background: var(--surface-veil-strong);
+  box-shadow: var(--sh-solid) rgba(63, 51, 85, 0.12), var(--sh-3);
+}
+
+.ss-board {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-auto-rows: 1fr;
+  gap: var(--s-3);
+  width: 100%;
+  max-width: 560px;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+@media (orientation: landscape) {
+  .ss-board {
+    grid-template-columns: repeat(4, 1fr);
+    max-width: none;
+  }
+}
+
+.ss-hole {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--r-lg);
+  background: var(--surface-veil);
+  box-shadow: inset 0 4px 12px rgba(63, 51, 85, 0.14);
+}
+
+.ss-hole.is-won {
+  box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.9), 0 0 34px 10px rgba(255, 255, 255, 0.75);
+  z-index: 3;
+}
+
+/* One shape class set, reused as the solid piece, the empty hole and the
+   filled result — so the silhouettes are guaranteed identical. */
+.shape {
+  display: block;
+  width: 58%;
+  aspect-ratio: 1;
+  background: var(--shape-color, var(--grape));
+  pointer-events: none;
+}
+
+.ss-holder .shape {
+  width: 62%;
+  filter: drop-shadow(0 4px 8px rgba(63, 51, 85, 0.28));
+}
+
+.shape.is-hole {
+  background: rgba(63, 51, 85, 0.16);
+}
+
+.shape.is-filled {
+  position: absolute;
+}
+
+.shape-circle {
+  border-radius: 50%;
+}
+.shape-square {
+  border-radius: 12%;
+}
+.shape-triangle {
+  clip-path: polygon(50% 2%, 98% 96%, 2% 96%);
+}
+.shape-star {
+  clip-path: polygon(
+    50% 2%, 61% 36%, 98% 36%, 68% 58%, 79% 92%,
+    50% 71%, 21% 92%, 32% 58%, 2% 36%, 39% 36%
+  );
+}
+.shape-heart {
+  clip-path: path(
+    "M50 92 C 20 68, 2 48, 2 30 A 24 24 0 0 1 50 22 A 24 24 0 0 1 98 30 C 98 48, 80 68, 50 92 Z"
+  );
+  /* path() is absolute, so the box must match the coordinates it was drawn in */
+  width: 58%;
+  aspect-ratio: 1;
+}
+.shape-diamond {
+  clip-path: polygon(50% 2%, 96% 50%, 50% 98%, 4% 50%);
+}
+
+/* ---------------------------------------------------------------
+   Drums
+   --------------------------------------------------------------- */
+.dr-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-auto-rows: 1fr;
+  gap: var(--s-3);
+  width: 100%;
+  height: 100%;
+  max-width: 620px;
+}
+
+@media (orientation: landscape) {
+  .dr-grid {
+    grid-template-columns: repeat(4, 1fr);
+    max-width: none;
+  }
+}
+
+.dr-pad {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, #fff8, transparent 60%), var(--pad-color);
+  box-shadow: var(--sh-solid-lg) rgba(63, 51, 85, 0.28), var(--sh-2);
+  will-change: transform;
+}
+
+.dr-emoji {
+  font-size: clamp(28px, 8vmin, 58px);
+  line-height: 1;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 4px rgba(63, 51, 85, 0.3));
+}
+
+.dr-ripple {
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  border: 4px solid rgba(255, 255, 255, 0.9);
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------------
+   Stickers
+   --------------------------------------------------------------- */
+.st-stage {
+  position: relative;
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: var(--r-xl);
+  background: linear-gradient(180deg, var(--sky) 0%, var(--sky) 62%, var(--ground) 62%, var(--ground) 100%);
+  box-shadow: var(--sh-solid) rgba(63, 51, 85, 0.14), var(--sh-3);
+  cursor: crosshair;
+}
+
+.st-scene-mark {
+  position: absolute;
+  right: 6%;
+  bottom: 4%;
+  font-size: clamp(40px, 14vmin, 110px);
+  line-height: 1;
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.st-placed {
+  position: absolute;
+  translate: -50% -50%;
+  font-size: clamp(28px, 8vmin, 56px);
+  line-height: 1;
+  pointer-events: none;
+  filter: drop-shadow(0 3px 5px rgba(63, 51, 85, 0.3));
+}
+
+.st-tray {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  width: 100%;
+  max-width: 640px;
+}
+
+.st-picker {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(52px, 1fr));
+  gap: var(--s-1);
+}
+
+.st-choice {
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--r-md);
+  background: var(--surface-veil-strong);
+  box-shadow: var(--sh-1);
+  font-size: clamp(20px, 5vmin, 32px);
+  line-height: 1;
+}
+
+.st-choice.is-active {
+  background: var(--surface);
+  box-shadow: 0 0 0 3px var(--bubblegum), var(--sh-2);
+}
+
+/* ---------------------------------------------------------------
+   Opposites
+   --------------------------------------------------------------- */
+.op-prompt {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-1);
+  padding: var(--s-3) var(--s-5);
+  border-radius: var(--r-xl);
+  background: var(--surface-veil-strong);
+  box-shadow: var(--sh-solid) rgba(63, 51, 85, 0.12), var(--sh-3);
+}
+
+.op-vs {
+  flex: none;
+  font-size: var(--fs-xl);
+  color: var(--ink-faint);
+  line-height: 1;
+}
+
+.op-choices {
+  display: flex;
+  justify-content: center;
+  gap: var(--s-3);
+  flex: none;
+  width: 100%;
+}
+
+.op-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-1);
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 180px;
+  padding: var(--s-3) var(--s-2);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--sh-solid) rgba(63, 51, 85, 0.14), var(--sh-2);
+  position: relative;
+}
+
+.op-choice.is-won {
+  box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.92), 0 0 34px 10px rgba(255, 255, 255, 0.8);
+  z-index: 3;
+}
+
+.op-emoji {
+  font-size: clamp(34px, 10vmin, 64px);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.op-word {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--ink-soft);
+  pointer-events: none;
 }
 
 /* ---------------------------------------------------------------

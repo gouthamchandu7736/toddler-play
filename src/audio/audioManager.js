@@ -219,6 +219,80 @@ export function playNote(freq, duration = 0.45) {
 }
 
 // ---------------------------------------------------------------------------
+// Percussion
+// ---------------------------------------------------------------------------
+
+/**
+ * A burst of filtered white noise — the basis of every unpitched drum.
+ * Generated per hit rather than cached: the buffers are a few thousand samples
+ * and a fresh one each time keeps repeated hits from sounding identical.
+ */
+function noise({ duration = 0.2, gain = 0.3, filter = "lowpass", freq = 1200 }) {
+  const c = getCtx();
+  if (!c || muted || !unlocked) return;
+
+  try {
+    const t0 = c.currentTime;
+    const frames = Math.max(1, Math.floor(c.sampleRate * duration));
+    const buffer = c.createBuffer(1, frames, c.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < frames; i += 1) {
+      // Decay the noise as it is written so the tail is already shaped.
+      data[i] = (Math.random() * 2 - 1) * (1 - i / frames);
+    }
+
+    const src = c.createBufferSource();
+    src.buffer = buffer;
+
+    const biquad = c.createBiquadFilter();
+    biquad.type = filter;
+    biquad.frequency.value = freq;
+
+    const env = c.createGain();
+    env.gain.setValueAtTime(gain, t0);
+    env.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+
+    src.connect(biquad).connect(env).connect(masterGain);
+    src.start(t0);
+    src.stop(t0 + duration + 0.02);
+  } catch {
+    /* a failed sound must never break a tap */
+  }
+}
+
+const DRUMS = {
+  /** Low sine swept downward — the classic kick. */
+  kick: () => tone({ freq: 150, glideTo: 45, duration: 0.34, type: "sine", gain: 0.55 }),
+  /** Noise burst plus a body tone. */
+  snare: () => {
+    noise({ duration: 0.2, gain: 0.3, filter: "highpass", freq: 900 });
+    tone({ freq: 190, duration: 0.14, type: "triangle", gain: 0.22 });
+  },
+  /** Short, bright, high-passed. */
+  hat: () => noise({ duration: 0.07, gain: 0.22, filter: "highpass", freq: 7000 }),
+  /** Long shimmering wash. */
+  cymbal: () => noise({ duration: 0.9, gain: 0.18, filter: "highpass", freq: 5000 }),
+  /** Pitched drums, so the kit can play a little melody too. */
+  tomLow: () => tone({ freq: 210, glideTo: 110, duration: 0.3, type: "sine", gain: 0.42 }),
+  tomHigh: () => tone({ freq: 320, glideTo: 170, duration: 0.26, type: "sine", gain: 0.4 }),
+  /** Wooden click. */
+  block: () => tone({ freq: 900, glideTo: 700, duration: 0.09, type: "square", gain: 0.16 }),
+  /** Shaker. */
+  shaker: () => noise({ duration: 0.12, gain: 0.16, filter: "bandpass", freq: 5200 }),
+};
+
+/** Play a named drum. Unknown names are ignored, never thrown. */
+export function playDrum(name) {
+  const fn = DRUMS[name];
+  if (!fn) return;
+  try {
+    fn();
+  } catch {
+    /* ignore */
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Speech
 // ---------------------------------------------------------------------------
 
@@ -324,6 +398,7 @@ export default {
   isUnlocked,
   playSfx,
   playNote,
+  playDrum,
   speak,
   stopSpeech,
   vibrate,
