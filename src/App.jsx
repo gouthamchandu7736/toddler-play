@@ -14,8 +14,11 @@ import Settings from "./components/Settings.jsx";
 import FindColor from "./games/FindColor.jsx";
 import ShapePop from "./games/ShapePop.jsx";
 import CopyTune from "./games/CopyTune.jsx";
+import LearnLetters from "./games/LearnLetters.jsx";
+import LearnNumbers from "./games/LearnNumbers.jsx";
+import FindIt from "./games/FindIt.jsx";
 
-import FARM from "./data/farm.js";
+import SCENES from "./data/scenes.js";
 import { stopSpeech } from "./audio/audioManager.js";
 import "./styles/global.css";
 
@@ -25,15 +28,18 @@ import "./styles/global.css";
  */
 const INITIAL_STATE = { screen: SCREENS.SPLASH, payload: null };
 
-/** Registry of playable content, keyed by the payload the Home tiles emit. */
+/**
+ * Registry of playable content, keyed by the payload the Home tiles emit.
+ * Adding an activity is one entry here plus one tile in Home.jsx; scenes need
+ * neither, only a new array in data/scenes.js.
+ */
 const GAMES = {
+  letters: LearnLetters,
+  numbers: LearnNumbers,
+  findIt: FindIt,
   findColor: FindColor,
   shapePop: ShapePop,
   copyTune: CopyTune,
-};
-
-const SCENES = {
-  farm: { characters: FARM, background: "linear-gradient(#bde3ff 0%, #bde3ff 45%, #a7d489 45%, #7cc576 100%)" },
 };
 
 export default function App() {

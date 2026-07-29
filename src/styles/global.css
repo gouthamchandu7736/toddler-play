@@ -284,18 +284,36 @@ body {
     max(3vmin, env(safe-area-inset-bottom)) max(3vmin, env(safe-area-inset-left));
 }
 
+/* Fixed column count with `grid-auto-rows: 1fr`: rows are created as needed
+   and share the container's height equally. That means the menu can grow to
+   any number of activities without ever overflowing — this app never scrolls,
+   so a grid that adds *pages* or *height* would be a bug. */
 .home-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat(2, 1fr);
-  gap: clamp(12px, 3vmin, 30px);
+  grid-auto-rows: 1fr;
+  gap: clamp(8px, 2vmin, 20px);
   width: 100%;
   height: 100%;
   max-width: 900px;
-  max-height: 900px;
+  max-height: 1100px;
   /* Reserve the top strip for the settings gear rather than letting it float
      over a play tile — a mis-tap there interrupts play with a gate. */
   padding-top: var(--corner-gutter);
+}
+
+/* Three across once there is room, so tiles stay closer to square than to
+   thin vertical slots as the menu grows. */
+@media (min-width: 360px) {
+  .home-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (orientation: landscape) {
+  .home-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
 }
 
 .home-tile {
@@ -303,12 +321,14 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.5vmin;
-  border-radius: clamp(20px, 5vmin, 44px);
+  gap: 4px;
+  padding: 6px;
+  border-radius: clamp(14px, 3.5vmin, 32px);
   background: var(--tile-color);
-  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.14), 0 12px 26px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.14), 0 10px 20px rgba(0, 0, 0, 0.12);
   will-change: transform;
   container-type: size;
+  overflow: hidden;
 }
 
 /* Emoji are sized against their own TILE, not the viewport. A vmin-based size
@@ -328,10 +348,10 @@ body {
 
 @supports (container-type: size) {
   .home-tile-emoji {
-    font-size: min(48cqmin, 34cqmax);
+    font-size: min(42cqmin, 30cqmax);
   }
   .home-tile-label {
-    font-size: min(14cqmin, 11cqmax);
+    font-size: min(14cqmin, 10cqmax);
   }
 }
 
@@ -382,10 +402,14 @@ body {
 
 /* Fixed 2x3 / 3x2 rather than auto-fit: the tile count must not change with
    the viewport, because this app never scrolls. Six always fits. */
+/* `grid-auto-rows: 1fr` rather than a fixed row count: scenes hold 6 or 8
+   characters and the rows must adapt without ever overflowing, because this
+   app never scrolls. Columns stay fixed so the tile count per row is
+   predictable — `auto-fit` would reflow unpredictably across devices. */
 .scene-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat(3, 1fr);
+  grid-auto-rows: 1fr;
   gap: clamp(10px, 2.5vmin, 26px);
   width: 100%;
   height: 100%;
@@ -399,8 +423,7 @@ body {
    corner clearance moves to the sides instead of the bottom. */
 @media (orientation: landscape) {
   .scene-grid {
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(2, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     padding-bottom: max(2vmin, env(safe-area-inset-bottom));
     padding-left: calc(var(--corner-gutter) + env(safe-area-inset-left));
     padding-right: calc(var(--corner-gutter) + env(safe-area-inset-right));
@@ -532,6 +555,306 @@ body {
   );
   border-radius: 0;
   box-shadow: none;
+}
+
+/* ---------------------------------------------------------------
+   Find it — listen and point
+   --------------------------------------------------------------- */
+.find-it {
+  background: linear-gradient(160deg, #eef7ff 0%, #dfeeff 55%, #ffeedd 100%);
+  justify-content: flex-start;
+  padding: calc(var(--brand-gutter) + env(safe-area-inset-top)) 3vmin
+    max(3vmin, env(safe-area-inset-bottom));
+  gap: 1.5vmin;
+}
+
+/* The question is the entire task, so replaying it is the biggest control on
+   screen — not a corner icon. */
+.fi-ask {
+  flex: 0 0 auto;
+  width: clamp(78px, 17vmin, 130px);
+  height: clamp(78px, 17vmin, 130px);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.12), 0 10px 24px rgba(0, 0, 0, 0.14);
+  font-size: clamp(34px, 8vmin, 60px);
+}
+
+.fi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-auto-rows: 1fr;
+  gap: clamp(12px, 3vmin, 30px);
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 2vmin 2vmin var(--corner-gutter);
+}
+
+@media (orientation: landscape) {
+  .fi-grid {
+    grid-template-columns: repeat(4, 1fr);
+    padding: 1vmin var(--corner-gutter);
+  }
+}
+
+.fi-tile {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: clamp(18px, 4vmin, 36px);
+  background: var(--tile-color);
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.14), 0 10px 22px rgba(0, 0, 0, 0.12);
+  will-change: transform;
+  container-type: size;
+}
+
+.fi-tile.is-won {
+  box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.9),
+    0 0 44px 14px rgba(255, 255, 255, 0.8);
+  z-index: 4;
+}
+
+.fi-emoji {
+  font-size: clamp(40px, 13vmin, 110px);
+  line-height: 1;
+  pointer-events: none;
+}
+
+@supports (container-type: size) {
+  .fi-emoji {
+    font-size: min(58cqmin, 42cqmax);
+  }
+}
+
+/* ---------------------------------------------------------------
+   Deck — shared chrome for the flashcard games (Letters, Numbers)
+   --------------------------------------------------------------- */
+.deck {
+  justify-content: center;
+  padding: calc(var(--brand-gutter) + env(safe-area-inset-top)) 0
+    max(3vmin, env(safe-area-inset-bottom));
+}
+
+/* One source of truth for the arrow width, so the stage padding and the arrow
+   can never drift apart and let the card slide under an arrow. */
+:root {
+  --deck-arrow-w: clamp(56px, 13vmin, 96px);
+}
+
+.deck-stage {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  /* Clear the full-height arrows down each edge. */
+  padding: 0 calc(var(--deck-arrow-w) + 6px) var(--corner-gutter);
+}
+
+/* Arrows run the whole height of the screen edge: an enormous target, and
+   well clear of the Home and replay buttons in the bottom corners.
+   min-width is reset because .tappable would otherwise force 88px and push
+   the arrow out over the card. 56px is a deliberate exception to the 88px
+   rule — the target is ~660px TALL, so it is far easier to hit than any
+   88x88 button; the rule exists to guarantee a finger lands, and a
+   full-height strip satisfies that comfortably. */
+.deck-arrow {
+  position: absolute;
+  top: var(--brand-gutter);
+  bottom: var(--corner-gutter);
+  z-index: 12;
+  min-width: 0;
+  min-height: 0;
+  width: var(--deck-arrow-w);
+  height: auto;
+  border-radius: 0;
+  background: rgba(255, 255, 255, 0.28);
+  font-size: clamp(44px, 10vmin, 80px);
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.45);
+  line-height: 1;
+}
+
+.deck-prev {
+  left: env(safe-area-inset-left);
+  border-radius: 0 22px 22px 0;
+}
+
+.deck-next {
+  right: env(safe-area-inset-right);
+  border-radius: 22px 0 0 22px;
+}
+
+.deck-replay {
+  position: absolute;
+  z-index: 20;
+  bottom: max(10px, env(safe-area-inset-bottom));
+  right: max(10px, env(safe-area-inset-right));
+  width: var(--tap-min);
+  height: var(--tap-min);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  font-size: clamp(24px, 5vmin, 40px);
+}
+
+/* ---------------------------------------------------------------
+   Learn Letters
+   --------------------------------------------------------------- */
+.learn-letters {
+  background: linear-gradient(160deg, #fff6e5 0%, #ffe8cc 100%);
+}
+
+/* Height follows the content rather than filling the stage — a full-height
+   card holding one letter reads as a mostly-empty box.
+   container-type is `inline-size`, not `size`: `size` demands a definite
+   height, which would force height:100% straight back. So the type scale
+   below is driven by the card's WIDTH (cqi), capped in vh so a short screen
+   can't overflow. */
+.letter-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5vmin;
+  width: 100%;
+  height: auto;
+  min-height: 55%;
+  max-width: 620px;
+  max-height: 100%;
+  padding: 4vmin 3vmin;
+  border-radius: clamp(22px, 5vmin, 44px);
+  background: var(--tile-color);
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.13), 0 14px 30px rgba(0, 0, 0, 0.14);
+  container-type: inline-size;
+}
+
+.letter-glyph {
+  display: flex;
+  align-items: baseline;
+  gap: 0.12em;
+  font-size: clamp(56px, 20vmin, 150px);
+  font-weight: 800;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.72);
+  pointer-events: none;
+}
+
+/* Lowercase shown alongside: children meet it far more often in real books,
+   yet most alphabet toys teach capitals only. */
+.letter-lower {
+  font-size: 0.62em;
+  opacity: 0.62;
+}
+
+.letter-emoji {
+  font-size: clamp(48px, 18vmin, 130px);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.letter-word {
+  font-size: clamp(20px, 5vmin, 40px);
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+
+@supports (container-type: inline-size) {
+  .letter-glyph {
+    font-size: min(44cqi, 19vh);
+  }
+  .letter-emoji {
+    font-size: min(38cqi, 17vh);
+  }
+  .letter-word {
+    font-size: min(13cqi, 6vh);
+  }
+}
+
+/* ---------------------------------------------------------------
+   Learn Numbers
+   --------------------------------------------------------------- */
+.learn-numbers {
+  background: linear-gradient(160deg, #eaf4ff 0%, #d6e9ff 100%);
+}
+
+/* Same reasoning as .letter-card: the card grows with the count instead of
+   always filling the screen, so "one apple" isn't a huge empty rectangle. */
+.number-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2.5vmin;
+  width: 100%;
+  height: auto;
+  min-height: 45%;
+  max-width: 640px;
+  max-height: 100%;
+  padding: 4vmin 3vmin;
+  border-radius: clamp(22px, 5vmin, 44px);
+  background: var(--tile-color);
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.13), 0 14px 30px rgba(0, 0, 0, 0.14);
+}
+
+.number-glyph {
+  display: flex;
+  align-items: center;
+  gap: 0.35em;
+  flex: 0 0 auto;
+}
+
+.number-digit {
+  font-size: clamp(50px, 16vmin, 120px);
+  font-weight: 800;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.72);
+}
+
+.number-word {
+  font-size: clamp(22px, 6vmin, 48px);
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+/* Flex-wrap, not a fixed column count. A grid with N columns divides whatever
+   width is left after the deck arrows, which on a 320 px phone squeezed ten
+   objects down to 43 px each — unhittable for a toddler. Wrapping instead
+   holds every object at a usable size and adds a row when it runs out of
+   width, so the count stays countable on any screen. */
+.number-items {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: center;
+  gap: clamp(5px, 1.6vmin, 14px);
+  flex: 0 1 auto;
+  min-height: 0;
+}
+
+.number-item {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  /* Below --tap-min by design: these are counters inside a card, not
+     navigation, and the deck's own controls are all full size. The floor of
+     56 px is what keeps them comfortably hittable. */
+  min-width: 0;
+  min-height: 0;
+  width: clamp(56px, 13vmin, 80px);
+  height: clamp(56px, 13vmin, 80px);
+  font-size: clamp(32px, 8vmin, 58px);
+  line-height: 1;
+  border-radius: 22%;
+  will-change: transform;
+  transition: background-color 140ms ease-out;
+}
+
+.number-item.is-lit {
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow: 0 0 22px 6px rgba(255, 255, 255, 0.6);
 }
 
 /* ---------------------------------------------------------------

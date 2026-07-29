@@ -199,3 +199,88 @@ Driven with headless Chrome at 390×844 and 844×390:
 - `src/assets/art/` is empty; emoji are the art. Swapping in SVG is a change to
   `data/farm.js` only.
 - Not deployed. Phase 8 covers Vercel/Netlify + installing to the device.
+
+---
+
+## Content expansion (2026-07-29)
+
+Grew from 4 activities to **12**, all reachable from one non-scrolling menu.
+
+**New scenes** — `data/scenes.js` (replaces `data/farm.js`)
+Animals, Birds, Vehicles, Fruits, Shapes. Pure data: no new components, no new
+screen state. `Scene.jsx` and `Character.jsx` were untouched, which is what the
+data-driven design in PLAN.md Section 4 was for.
+
+**Learn Letters** — `games/LearnLetters.jsx`, `data/letters.js`
+A-Z flashcards. Says the letter *alone first*, pauses, then "A is for Apple" —
+run together as one phrase a 3-year-old hears only "aysforapple". Shows
+uppercase and lowercase together; children meet lowercase far more often in
+real books, yet most alphabet toys teach capitals only. Navigation wraps in
+both directions, so there is no first or last card to get stuck on and no
+disabled button (a disabled control is a dead tap).
+
+Words are concrete nouns she already knows, and every emoji predates Unicode 14
+— newer ones render as an empty box on older Android, and a blank card is worse
+than a duller word. X uses "Box": no toddler-familiar word starts with X, and
+this at least teaches the /ks/ sound with a picture that always renders.
+
+**Learn Numbers** — `games/LearnNumbers.jsx`, `data/numbers.js`
+1-10. The teaching point is **one-to-one correspondence**, not reciting number
+names — most 3-year-olds can chant "one two three" long before it means
+anything. So each object lights up, plays a rising note and is named as it is
+counted, and tapping an individual object names its position so she can count
+at her own pace.
+
+**Find it** — `games/FindIt.jsx`
+"Where is the cow?" Choices are drawn from **one category per round** — mixing
+a lion in with three lorries makes the answer findable by elimination without
+knowing any of the words. This is the one activity that genuinely needs sound,
+so the replay button is full-size and central rather than a corner icon.
+
+**Deck** — `components/Deck.jsx`
+Shared chrome for the two flashcard games. Prev/next run the full height of
+each screen edge, which is both an enormous target and clear of the Home and
+replay buttons that a toddler hits constantly by accident.
+
+### Layout changes
+
+- `home-grid` and `scene-grid` switched to **`grid-auto-rows: 1fr`** with a
+  fixed column count. Rows are created as needed and share the container height,
+  so the menu can grow to any number of activities and a scene can hold 6 or 8
+  characters — without ever overflowing. This app never scrolls, so a menu that
+  grew in height or added pages would be a bug.
+- 12 tiles fill a clean 3x4 (portrait) / 5x3 (landscape) with no ragged row.
+
+### Bugs found and fixed in this pass
+
+- **Deck arrows overlapped the card by 37 px each side.** `.tappable` sets
+  `min-width: 88px`, which silently overrode the arrows' `width`. Reset
+  `min-width` and moved the width into `--deck-arrow-w`, shared by the arrow and
+  the stage padding so they can't drift apart again. The card went from 198 px
+  to 266 px wide. The 56 px arrow is a **deliberate exception** to the 88 px
+  rule: the target is ~660 px tall, so it is far easier to hit than any 88x88
+  button, and the rule exists to guarantee a finger lands.
+- **Counting objects shrank to 43 px on a 320 px screen** — unhittable. They
+  were in a fixed-column grid dividing whatever width the arrows left over.
+  Switched to flex-wrap: every object holds >=56 px and a row is added when
+  width runs out. Now a consistent 64 px on every viewport tested.
+- **Flashcards filled the full screen height** regardless of content, so "one
+  apple" was a huge empty rectangle. Cards now size to their content
+  (`height: auto`). This forced `container-type` from `size` to `inline-size` —
+  `size` requires a definite height, which would have pulled `height: 100%`
+  straight back — so the type scale is driven by card width (`cqi`) and capped
+  in `vh` so a short screen still can't overflow.
+
+### Verified
+
+At 390x844, 844x390 **and** 320x568:
+
+- All 12 activities open, render and return home. **No console errors.**
+- Nothing scrolls vertically or horizontally on any screen at any size.
+- Every primary control >= 88 px. The two documented exceptions are the deck
+  arrows (56 px wide x 400-676 px tall) and the number counters (64 px).
+- Letters wrap A -> B -> ... -> Z going backwards from A.
+- Numbers show exactly 1, 2, 3 objects on the first three cards and light them
+  progressively during the count.
+- Find it draws all four choices from a single category.
+- Ten counters fit inside the card with zero overflow at 320 px wide.
