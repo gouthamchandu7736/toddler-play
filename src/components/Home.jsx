@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import Brand from "./Brand.jsx";
 import { playSfx, speak, vibrate } from "../audio/audioManager.js";
 
 /**
@@ -30,6 +31,10 @@ export default function Home({ onPick, onSettings }) {
 
   return (
     <div className="screen home">
+      {/* Sits in the strip the grid already reserves for the gear, so it
+          costs no play area. */}
+      <Brand variant="bar" />
+
       <div className="home-grid">
         {TILES.map((tile) => (
           <motion.button

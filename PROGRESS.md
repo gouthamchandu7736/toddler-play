@@ -118,6 +118,28 @@ area).
 `theme_color` / `background_color` are that same `#f6d216`, which makes the PWA
 launch splash (background + centred 512 icon) seamless.
 
+**In-app branding** — `components/Brand.jsx`, `appInfo.js`
+The manifest name/icon are only visible on the home screen, so the badge is
+also shown *inside* the app, in three variants: `full` (splash hero),
+`bar` (Home header), `mini` (compact badge on scenes and games).
+
+Two things make it safe for this audience:
+- **`pointer-events: none`.** A toddler taps corners constantly; a branding
+  element that could absorb a tap would be a dead spot. Verified with
+  `elementFromPoint` at the badge centre on every screen — the tap lands on the
+  play grid underneath, never on the badge.
+- **`--brand-gutter`** reserves a top strip on each play grid so the badge
+  doesn't sit over an animal. It has to cover the badge's top offset *and* its
+  height; sized at only the height it clipped the first row by 2 px.
+
+The icon is imported through Vite from `src/assets/art/` rather than referenced
+as a bare `/icons/…` path, so it gets hashed, precached, and survives a change
+of `base` (e.g. for GitHub Pages). The 96 px in-app copy is 7 KB.
+
+`appInfo.js` holds `APP_NAME` / `APP_SHORT`. Renaming means editing that file
+**and** `vite.config.js` — the manifest is generated at build time and can't
+import from `src`.
+
 All icons are palette-quantised to 256 colours: 464 KB → 73 KB for the 512,
 and the total precache dropped from 1277 KB back to 518 KB with no visible
 quality loss. Worth it on the cheap phone this targets.
@@ -140,6 +162,8 @@ Driven with headless Chrome at 390×844 and 844×390:
   splash, reaches the Farm, and animates a tap. 10 cache entries.
 - All five icons fetch 200, decode, and report their declared dimensions;
   `document.title` is "Aditi's Playhouse", apple web-app title is "Aditi".
+- Brand badge present on all six screens in both orientations, image decoded,
+  `pointer-events: none` confirmed, and overlapping **zero** tappable elements.
 - Portrait and landscape both fit with no page scroll.
 
 ---
@@ -158,6 +182,9 @@ Driven with headless Chrome at 390×844 and 844×390:
 - **Corner buttons sat on top of play tiles** (Home over the horse, the gear over
   the Colors tile). Added a `--corner-gutter` reserved by each play grid —
   bottom in portrait, sides in landscape where width is plentiful.
+- **The brand badge clipped the first farm tile by ~2 px.** `--brand-gutter` was
+  sized to the badge's height but not its 8 px top offset. Also dropped the
+  landscape override that let the badge share the top strip with row one.
 
 ---
 

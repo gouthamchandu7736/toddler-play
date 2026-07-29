@@ -74,6 +74,13 @@ body {
      a dead tap, and a tile that triggers Home instead of playing is worse. */
   --corner-gutter: calc(var(--tap-min) + 26px);
 
+  /* Strip reserved along the top of a play screen for the app badge. The badge
+     itself is pointer-events: none, so this is purely so it doesn't sit on top
+     of an animal — not a tap-safety measure.
+     Must cover the badge's top offset (8px) AND its height, or it clips the
+     first row by a few pixels. */
+  --brand-gutter: clamp(54px, 11vmin, 80px);
+
   color-scheme: light;
 }
 
@@ -127,6 +134,100 @@ body {
 }
 
 /* ---------------------------------------------------------------
+   Brand — app icon + name shown inside the app.
+
+   pointer-events: none is load-bearing. A toddler aims badly and taps the
+   corners constantly; if this badge could absorb a tap it would be a dead
+   spot, which PLAN.md Section 2 rule 2 forbids. Taps pass straight through to
+   whatever is underneath.
+   --------------------------------------------------------------- */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  pointer-events: none;
+  user-select: none;
+}
+
+.brand-icon {
+  display: block;
+  border-radius: 24%;
+  object-fit: contain;
+  /* The artwork carries its own frame, so it needs a shadow rather than a
+     border to lift off a busy background. */
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.28));
+}
+
+.brand-name {
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+/* --- mini: scenes and games. Sits in the reserved top strip. --- */
+.brand-mini {
+  position: absolute;
+  top: max(8px, env(safe-area-inset-top));
+  left: max(10px, env(safe-area-inset-left));
+  z-index: 15;
+  padding: 5px 14px 5px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.16);
+}
+
+.brand-mini .brand-icon {
+  width: clamp(28px, 6vmin, 42px);
+  height: clamp(28px, 6vmin, 42px);
+}
+
+.brand-mini .brand-name {
+  font-size: clamp(14px, 3vmin, 22px);
+  color: #3a2e2a;
+}
+
+/* --- bar: Home screen header, in the strip the grid already reserves. --- */
+.brand-bar {
+  position: absolute;
+  top: max(10px, env(safe-area-inset-top));
+  left: max(14px, env(safe-area-inset-left));
+  z-index: 15;
+  /* Stop the name running under the settings gear in the opposite corner. */
+  right: calc(var(--corner-gutter) + env(safe-area-inset-right));
+  overflow: hidden;
+}
+
+.brand-bar .brand-icon {
+  width: clamp(38px, 9vmin, 60px);
+  height: clamp(38px, 9vmin, 60px);
+}
+
+.brand-bar .brand-name {
+  font-size: clamp(17px, 4vmin, 30px);
+  color: #3a2e2a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- full: the splash hero. --- */
+.brand-full {
+  flex-direction: column;
+  gap: 2.5vmin;
+}
+
+.brand-full .brand-icon {
+  width: clamp(140px, 42vmin, 300px);
+  height: clamp(140px, 42vmin, 300px);
+  border-radius: 22%;
+  filter: drop-shadow(0 14px 26px rgba(0, 0, 0, 0.25));
+}
+
+.brand-full .brand-name {
+  font-size: clamp(26px, 6.5vmin, 52px);
+  color: #7a4b12;
+}
+
+/* ---------------------------------------------------------------
    Sparkles — decorative burst, must never intercept a tap
    --------------------------------------------------------------- */
 .sparkles {
@@ -157,10 +258,10 @@ body {
   gap: 1vh;
 }
 
+/* Wrapper for the breathing animation only — the shadow lives on .brand-icon
+   so it follows the icon's rounded corners rather than its bounding box. */
 .splash-art {
-  font-size: clamp(90px, 34vmin, 300px);
   line-height: 1;
-  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.18));
 }
 
 .splash-hint {
@@ -288,7 +389,8 @@ body {
   gap: clamp(10px, 2.5vmin, 26px);
   width: 100%;
   height: 100%;
-  padding: max(2vmin, env(safe-area-inset-top)) max(2vmin, env(safe-area-inset-right))
+  padding: calc(var(--brand-gutter) + env(safe-area-inset-top))
+    max(2vmin, env(safe-area-inset-right))
     calc(var(--corner-gutter) + env(safe-area-inset-bottom))
     max(2vmin, env(safe-area-inset-left));
 }
@@ -334,7 +436,7 @@ body {
 .find-color {
   background: linear-gradient(160deg, #fdf6e3 0%, #ffe8d6 100%);
   justify-content: flex-start;
-  padding: max(3vmin, env(safe-area-inset-top)) 3vmin
+  padding: calc(var(--brand-gutter) + env(safe-area-inset-top)) 3vmin
     max(3vmin, env(safe-area-inset-bottom));
   gap: 2vmin;
 }
@@ -438,7 +540,7 @@ body {
 .copy-tune {
   background: linear-gradient(160deg, #2b2d42 0%, #4a4e69 100%);
   justify-content: center;
-  padding: max(3vmin, env(safe-area-inset-top)) 3vmin
+  padding: calc(var(--brand-gutter) + env(safe-area-inset-top)) 3vmin
     max(3vmin, env(safe-area-inset-bottom));
   gap: 2vmin;
 }

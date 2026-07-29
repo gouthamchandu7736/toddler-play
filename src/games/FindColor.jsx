@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import Sparkles from "../components/Sparkles.jsx";
 import HomeButton from "../components/HomeButton.jsx";
+import Brand from "../components/Brand.jsx";
 import { playSfx, speak, stopSpeech, vibrate } from "../audio/audioManager.js";
 
 /**
@@ -94,6 +95,8 @@ export default function FindColor({ onHome }) {
 
   return (
     <div className="screen game find-color">
+      <Brand />
+
       {/* The prompt as a giant colour swatch, so the child can match by sight
           without hearing or reading the word. */}
       <div className="fc-prompt">

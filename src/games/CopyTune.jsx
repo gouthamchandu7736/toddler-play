@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import Sparkles from "../components/Sparkles.jsx";
 import HomeButton from "../components/HomeButton.jsx";
+import Brand from "../components/Brand.jsx";
 import {
   NOTES,
   playNote,
@@ -140,6 +141,8 @@ export default function CopyTune({ onHome }) {
 
   return (
     <div className="screen game copy-tune">
+      <Brand />
+
       <div className="ct-status" aria-live="polite">
         <motion.span
           key={phase}

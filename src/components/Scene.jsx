@@ -1,5 +1,6 @@
 import Character from "./Character.jsx";
 import HomeButton from "./HomeButton.jsx";
+import Brand from "./Brand.jsx";
 
 /**
  * Lays out a theme's characters.
@@ -15,6 +16,7 @@ export default function Scene({ characters, onHome, background }) {
       className="screen scene"
       style={background ? { background } : undefined}
     >
+      <Brand />
       <div className="scene-grid">
         {characters.map((c) => (
           <Character key={c.id} character={c} />
