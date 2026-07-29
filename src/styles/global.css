@@ -1,0 +1,157 @@
+/* ---------------------------------------------------------------
+   Toddler Play — global styles
+   Rules this file enforces (PLAN.md Section 2):
+   - no text selection, no long-press callout, no tap highlight
+   - no overscroll bounce / pull-to-refresh
+   - no double-tap zoom (touch-action)
+   - full-viewport, non-scrolling root
+   --------------------------------------------------------------- */
+
+/* --- reset --- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none; /* no pull-to-refresh, no rubber-band */
+}
+
+html {
+  /* dvh-aware full height on mobile browsers with dynamic toolbars */
+  height: 100dvh;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  height: 100dvh;
+  position: fixed; /* belt-and-braces against iOS scroll chaining */
+  inset: 0;
+  font-family: "Baloo 2", "Comic Sans MS", "Trebuchet MS", system-ui, -apple-system,
+    "Segoe UI", sans-serif;
+  font-size: clamp(20px, 4vw, 32px);
+  line-height: 1.25;
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- kill every gesture a toddler can trigger by accident --- */
+* {
+  -webkit-touch-callout: none; /* no long-press "save image" menu */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation; /* no double-tap-to-zoom */
+}
+
+/* --- palette --- */
+:root {
+  --bg: #fdf6e3;
+  --ink: #3a2e2a;
+  --sky: #bde3ff;
+  --grass: #7cc576;
+  --sun: #ffd166;
+  --barn: #e76f51;
+
+  --tap-min: 88px; /* PLAN.md Section 2 rule 1: minimum touch target */
+
+  color-scheme: light;
+}
+
+/* --- full-screen app shell --- */
+.app-root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  /* respect notches/home indicator so nothing tappable hides under them */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* Every screen fills the shell. */
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2vh;
+  text-align: center;
+}
+
+/* --- base tappable: never smaller than the minimum target --- */
+.tappable {
+  min-width: var(--tap-min);
+  min-height: var(--tap-min);
+  display: grid;
+  place-items: center;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+/* Toddlers hold fingers down; don't leave things looking stuck. */
+.tappable:focus {
+  outline: none;
+}
+.tappable:focus-visible {
+  outline: 4px solid var(--barn);
+  outline-offset: 4px;
+}
+
+/* Respect users who ask for less motion, without removing feedback entirely. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Dev-only placeholder styling for Phase 0 stub screens. */
+.placeholder {
+  display: flex;
+  flex-direction: column;
+  gap: 3vh;
+  align-items: center;
+}
+
+.placeholder h1 {
+  font-size: clamp(32px, 8vw, 72px);
+}
+
+.placeholder .stub-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  justify-content: center;
+}
+
+.placeholder .stub-nav button {
+  min-width: var(--tap-min);
+  min-height: var(--tap-min);
+  padding: 0 28px;
+  border: none;
+  border-radius: 24px;
+  background: var(--grass);
+  color: #fff;
+  font: inherit;
+  font-size: clamp(18px, 3vw, 28px);
+}
